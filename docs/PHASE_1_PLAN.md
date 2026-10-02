@@ -19,6 +19,6 @@ Keep approved top-down perspective, soft chibi proportions, Rose & Sky, rounded 
 
 `apps/web/src` Auth/pairing/world/infra/cache, native plugin configuration, `packages/shared/src` schemas/pure movement rules, new `supabase/migrations` and `supabase/tests`, browser tests, lockfile and phase docs. Preserve approved references, account identifiers and cloud data. No new server, paid tier, game features or unrelated replacement architecture.
 
-## Open account choice
+## Account choice — resolved
 
-The app handles both confirmation modes. Existing confirmed test accounts can verify movement while cloud signup/email policy is pending. Before changing hosted Auth settings, present the concrete account flow and resolve private immediate-signup versus free custom SMTP confirmation. SMTP/passwords/secret keys stay out of chat/repo. Official [Supabase SMTP restrictions](https://supabase.com/docs/guides/auth/auth-smtp) were rechecked on 2026-10-02.
+User chose immediate signup without email verification for private testing; hosted signup was enabled and confirmation disabled. Anonymous sign-in stays disabled. The app still handles confirmation-required responses. Free custom SMTP/password-reset email is deferred before wider sharing; passwords and secret keys stay out of chat/repo. Official [Supabase SMTP restrictions](https://supabase.com/docs/guides/auth/auth-smtp) were rechecked on 2026-10-02. Implementation/verification progress is in PHASE_1_STATUS.md.

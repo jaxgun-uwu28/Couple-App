@@ -1023,7 +1023,7 @@ Must include:
 
 ## 26. Master Feature Checklist (track completion)
 
-Phase 0 verified on 2026-10-02: architecture/quota research, approved concept references, deployed Phaser canvas, installed debug APK, bidirectional web/Android pings, recovery/idle checks and live cross-couple authorization denial. Checked infrastructure items apply to the current Phase 0 foundation; gameplay and Phase 1 onward remain unimplemented. Evidence: `docs/PHASE_0_STATUS.md`. Awaiting approval for Phase 1.
+Phase 0 verified on 2026-10-02: architecture/quota research, approved concept references, deployed Phaser canvas, installed debug APK, bidirectional web/Android pings, recovery/idle checks and live cross-couple authorization denial. Phase 1 was authorized and is implemented with verification in progress; final deployment and real web/Android walking checks are pending. Evidence: `docs/PHASE_0_STATUS.md` and `docs/PHASE_1_STATUS.md`. Phase 2 has not started.
 
 **Design approvals (record in DESIGN.md):** [x] Perspective [x] Character [x] Cat [x] Dog [x] House/furniture [x] UI/HUD [x] Palette + typography [x] Animation language [x] Sound direction [x] 18 mockups reviewed
 

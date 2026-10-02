@@ -93,7 +93,15 @@ test('two sessions move, collide, stop idle traffic and reconnect at 150ms laten
   await expect.poll(async()=>Math.abs(await coordinate(b)-await coordinate(a,'data-partner-x'))).toBeLessThan(12);
   const sent=await a.getByTestId('world').getAttribute('data-sent');await a.waitForTimeout(1500);expect(await a.getByTestId('world').getAttribute('data-sent')).toBe(sent);
   const stoppedB=await coordinate(b);await a.getByRole('button',{name:'Settings',exact:true}).click();await a.getByRole('button',{name:'Reconnect',exact:true}).click();await expect(a.getByText('Connected',{exact:true})).toBeVisible();await expect.poll(async()=>Math.abs(await coordinate(a,'data-partner-x')-stoppedB)).toBeLessThan(12);
-  await a.keyboard.down('w');await expect.poll(()=>coordinate(a,'data-self-y')).toBeLessThan(400);await a.waitForTimeout(1200);await a.keyboard.up('w');expect(await coordinate(a,'data-self-y')).toBeGreaterThanOrEqual(370);
+  // Polling a remote avatar can overshoot on a slow runner. Align the local
+  // character beneath the table before asserting its lower collision edge.
+  await a.locator('canvas').click();
+  const alignKey=await coordinate(a)>730?'a':'d';
+  await a.keyboard.down(alignKey);
+  await expect.poll(async()=>alignKey==='a'?await coordinate(a)<=730:await coordinate(a)>=730,{intervals:[25]}).toBe(true);
+  await a.keyboard.up(alignKey);
+  expect(await coordinate(a)).toBeGreaterThan(665);expect(await coordinate(a)).toBeLessThan(795);
+  await a.keyboard.down('w');await expect.poll(()=>coordinate(a,'data-self-y'),{intervals:[25]}).toBeLessThan(400);await a.waitForTimeout(1200);await a.keyboard.up('w');expect(await coordinate(a,'data-self-y')).toBeGreaterThanOrEqual(370);expect(await coordinate(a,'data-self-y')).toBeLessThan(380);
   await aContext.close();await bContext.close();
 });
 

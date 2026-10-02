@@ -17,7 +17,7 @@ Log every architecture or scope decision here (date, decision, reason, alternati
 - [x] 0b Art direction (perspective, character, pet, house, UI, palette)
 - [x] 0c Realtime backend: Supabase; Vercel WebSocket gate unproven
 - [x] 0d Local storage: IndexedDB only when caching is needed; no SQLite
-- [ ] 1  Email auth: disable confirmation vs free custom SMTP
+- [x] 1  Email auth: immediate signup without confirmation for private testing; free SMTP deferred before wider sharing
 - [x] 2  APK delivery: bundled debug assets for Phase 0; signed release/update UX deferred
 - [ ] 3  Realtime budget fallback
 - [ ] 4  Shared wallet vs personal pockets

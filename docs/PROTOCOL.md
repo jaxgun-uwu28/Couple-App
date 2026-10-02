@@ -36,6 +36,8 @@ Presence payload (`presenceSchema`, strips SDK metadata): UUID `user_id/session_
 
 Every snapshot variant includes ISO `server_time`, used to order device sessions without trusting client wall clocks. Cache uses `user_id:couple_id:schema_version`, strict snapshot validation, IndexedDB with in-memory fallback, and invalidates outstanding writes on logout/account switch. Cached world is read-only until the server and private channel recover. Native session/settings use Capacitor Preferences in app-private storage with Android backup disabled; it is not hardware-backed encryption. Web sessions use the SDK default, settings localStorage. Pairing retries reuse an intent's idempotency key after network loss; no offline action queue is introduced in Phase 1.
 
+Device ownership is stamped once from a **fresh** RPC before Presence tracking; cached server_time cannot establish a new session's priority. Normal recovery retains that timestamp, while Play here explicitly creates a new session/timestamp. Ephemeral `lastSeen` is a receiver-local observation, never persistence/authorization. The collision step uses unsmoothed frame time with the existing 250ms cap; visual camera easing retains smoothing.
+
 ### Phase 0 diagnostic event
 | Event | Sender | Payload (zod schema) | Rate limit | Notes |
 |---|---|---|---|---|
