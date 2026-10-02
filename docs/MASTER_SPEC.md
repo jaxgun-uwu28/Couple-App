@@ -1023,15 +1023,15 @@ Must include:
 
 ## 26. Master Feature Checklist (track completion)
 
-Phase 0 verified on 2026-10-02: architecture/quota research, approved concept references, deployed Phaser canvas, installed debug APK, bidirectional web/Android pings, recovery/idle checks and live cross-couple authorization denial. Phase 1 is deployed with passing automated checks and user-confirmed real web/Android walking, reconnect and Away. A partner-movement jitter fix is deployed and awaiting phone recheck before Phase 1 completion. Evidence: `docs/PHASE_0_STATUS.md` and `docs/PHASE_1_STATUS.md`. Phase 2 has not started.
+Phase 0 verified on 2026-10-02. Phase 1 completed on 2026-10-03: automated/browser/database/security checks pass; user confirmed real web/Android walking, reconnect, Away and reduced movement jitter. Interact/E hint clears after three seconds. Checked foundation items below apply to the Phase 1 scope; future world/game systems remain unchecked. Evidence: `docs/PHASE_0_STATUS.md` and `docs/PHASE_1_STATUS.md`. Phase 2 has not started.
 
 **Design approvals (record in DESIGN.md):** [x] Perspective [x] Character [x] Cat [x] Dog [x] House/furniture [x] UI/HUD [x] Palette + typography [x] Animation language [x] Sound direction [x] 18 mockups reviewed
 
-**Local-first:** [ ] IndexedDB cache + schema versioning [ ] Delta snapshot RPC [ ] Optimistic UI + rollback [ ] Offline queue + idempotency keys [ ] Offline policy table enforced [ ] Offline UX (chip/banner/syncing) [ ] Cache wipe on logout
-**Deploy/Free-tier:** [x] Backend gate decision recorded (Supabase vs Vercel WS) [x] RealtimeTransport abstraction [ ] Two-device preview testing from Phase 1 [x] Supabase project + migrations [x] RLS on ALL tables [x] pgTAP RLS tests [x] Vercel deploy [x] Capacitor Android shell [ ] Signed release APK [ ] GitHub Release + in-app update check [x] Keep-alive cron [ ] Backup action [ ] Photo compression + quotas [ ] iPhone PWA install guide
-**Platform:** [ ] Auth [ ] Pairing/invite [ ] Unlink/delete/export [ ] Settings [ ] PWA [ ] Push [ ] i18n [ ] Accessibility [ ] Analytics (privacy-safe) [ ] Error reporting
-**World:** [ ] Tiled map [ ] Collision [ ] Nav grid [ ] Y-sorting [ ] Doors [ ] Day/night [ ] Minimap [ ] Camera
-**Movement/Net:** [ ] Realtime channel + Presence [ ] Dead-reckoning broadcast [ ] Interpolation [ ] Host-client election + handover [ ] Reconnect/resync [ ] SQL-side rate limits [ ] Protocol doc [ ] Latency indicator [ ] Message-budget counter
+**Local-first:** [x] IndexedDB cache + schema versioning [x] Delta snapshot RPC [ ] Optimistic UI + rollback [ ] Offline queue + idempotency keys [ ] Offline policy table enforced [ ] Offline UX (chip/banner/syncing) [x] Cache wipe on logout
+**Deploy/Free-tier:** [x] Backend gate decision recorded (Supabase vs Vercel WS) [x] RealtimeTransport abstraction [x] Two-device preview testing from Phase 1 [x] Supabase project + migrations [x] RLS on ALL tables [x] pgTAP RLS tests [x] Vercel deploy [x] Capacitor Android shell [ ] Signed release APK [ ] GitHub Release + in-app update check [x] Keep-alive cron [ ] Backup action [ ] Photo compression + quotas [ ] iPhone PWA install guide
+**Platform:** [x] Auth [x] Pairing/invite [ ] Unlink/delete/export [x] Settings (Phase 1 controls) [ ] PWA [ ] Push [ ] i18n [ ] Accessibility [ ] Analytics (privacy-safe) [ ] Error reporting
+**World:** [ ] Tiled map [x] Collision (Phase 1 test room) [ ] Nav grid [x] Y-sorting [ ] Doors [ ] Day/night [ ] Minimap [x] Camera
+**Movement/Net:** [x] Realtime channel + Presence [x] Dead-reckoning broadcast [x] Interpolation [ ] Host-client election + handover [x] Reconnect/resync [x] SQL-side rate limits (pairing) [x] Protocol doc [ ] Latency indicator [ ] Message-budget counter
 **Characters:** [ ] Creator [ ] Layers [ ] Anims [ ] Outfit presets [ ] Name tags [ ] AFK
 **Social:** [ ] Chat [ ] Read receipts [ ] Typing [ ] Bubbles [ ] Reactions [ ] Emote wheel [ ] Proximity menu [ ] Hug/cuddle consent [ ] Hold hands [ ] Call over [ ] Teleport [ ] Poke [ ] Love notes
 **Pet:** [ ] Adoption [ ] FSM [ ] Pathfinding [ ] Stats/decay (hunger, happiness, energy, cleanliness, bond) [ ] Personalities [ ] Feed/water/treat [ ] Play [ ] Cuddle [ ] Bathe [ ] Brush [ ] Sleep [ ] Messes [ ] Bond [ ] Activity log [ ] Accessories [ ] Tricks

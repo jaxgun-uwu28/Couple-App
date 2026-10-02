@@ -1,8 +1,8 @@
-# Phase 1 — verification in progress
+# Phase 1 — complete
 
-Authorized 2026-10-02; updated 2026-10-03 (Asia/Manila). Phase 1 is **not complete**. Phase 2 has not started. The test room uses placeholders matching the approved top-down chibi / Rose & Sky / landscape design.
+Authorized 2026-10-02; completed 2026-10-03 (Asia/Manila). Phase 2 has not started. The test room uses placeholders matching the approved top-down chibi / Rose & Sky / landscape design.
 
-User subsequently tested the APK and web together: both connected and walked, reconnect worked, and Away worked. Local movement was smooth, but the partner view lagged/jumped during changes in movement. Signal/Wi-Fi quality is unmeasured. A bounded correction/buffer and timely-stop fix is tested and deployed as `85dea56`; real-device confirmation of this fix is pending. Earlier foundation checks below describe `3928fc2`.
+User tested the APK and web together: both connected and walked, reconnect worked, and Away worked. After the `85dea56` movement fix, user confirmed jumping and delay were reduced on both web and phone. Signal/Wi-Fi quality remains unmeasured. The subsequent interaction hint timeout is fixed and verified in the live browser; final web/APK code is `c7d3405`. Earlier foundation checks below describe `3928fc2`.
 
 ## Implemented
 
@@ -36,13 +36,19 @@ Private Broadcast/Presence authorization only for own couple. Typed player/sync 
 - Final [APK build 37042314663](https://github.com/jaxgun-uwu28/Couple-App/actions/runs/37042314663) passed for the same commit. Verified GitHub archive digest, APK v2 signature, package/version, SDK 24 minimum/36 target, sensorLandscape, backup off, App/Preferences plugins, bundled hosted URL/public key and rawDelta code. No `sb_secret_` key found. Local APK: ignored `artifacts/phase1/Paw-and-Us-phase1-3928fc2.apk`, SHA256 `c870dbe4eb3a620a7aa409526dfd3e40db924af5f0a3ae016fc08bf0f66ddcd8`. The automatic duplicate APK build of the identical main commit was cancelled after this artifact succeeded.
 - User confirmed actual Phase 1 web/phone walking, connection, reconnect and Away. Reported partner movement jitter remains open until the new fix is checked on those devices. No claim is made that network quality was measured or that a timed native idle-minute observation was performed.
 
-## Movement fix — deployed; phone recheck pending
+## Movement fix — deployed; user recheck confirmed
 
 - `85dea56`: optional monotonic motion time negotiated through Presence for compatibility with the previous strict-schema APK (including old observer devices). Receiver keeps 32 keyframes/three seconds, uses a 100ms playback delay, bounds visible correction speed, and freezes Away at the drawn position. Sender coalesces moving changes at 100ms and reserves the tenth rolling-second slot for stopping. One correction/second only while moving; idle motion remains zero. No new library, periodic traffic, database change or RPC.
 - [CI 37045121656](https://github.com/jaxgun-uwu28/Couple-App/actions/runs/37045121656) passes typecheck/build, **37 unit tests**, **12 browser tests**, **65 pgTAP assertions** and concurrent join. New cases cover late legacy stops, variable-delay turns/stops, burst delivery/clock regression, Away freeze, slow/stalled render frames, rapid stick release, and legacy Presence negotiation. Fixture latency and unit schedules are simulated; they do not measure the user's network.
 - Vercel production `4twSqryXNHjmnsXCEeQ8cvAhbC1B` is Ready for this commit. Live browser reconnects with the same built module `/assets/index-D7NtQHK3.js`. Local verification room exited to leave control available to the phone.
 - [APK 37045626589](https://github.com/jaxgun-uwu28/Couple-App/actions/runs/37045626589) succeeds for the same commit; archive digest and APK v2 signature pass. Bundled URL/public key and new motion clock fields verified; no `sb_secret_` key found. Ignored local file `artifacts/phase1/Paw-and-Us-phase1-movement-fix-85dea56.apk`; SHA256 `7cabbbf6082e16f4e26086fdbf8048380bc8f0f44dade1ecefb7704355f9c961`.
-- User received the new APK and instructions to refresh web, check straight movement/quick turns/stops, Reconnect and Away. Awaiting response. Some partner delay remains inherent; severe stalls/loss cannot be reconstructed and buffering adds 100ms intentionally. Phase 1 stays open; no done tag.
+- User received the new APK and confirmed reduced jumping/delay on web and phone. Some partner delay remains inherent; severe stalls/loss cannot be reconstructed and buffering adds 100ms intentionally.
+
+## Final minor fix and verification
+
+`c7d3405` makes the Interact/E placeholder message disappear after three seconds. Repeated use resets the timer; unmount clears it, and the timer does not erase a replacement error. No database/RPC/event change. Build/typecheck pass. Live `/assets/index-f7HAL1Qu.js` verified: click shows the message, timeout removes it while connection remains active.
+
+[Final CI 37047254312](https://github.com/jaxgun-uwu28/Couple-App/actions/runs/37047254312) passes all web/database checks (37 unit, 12 browser, 65 database assertions plus concurrent join). [Final APK 37047254377](https://github.com/jaxgun-uwu28/Couple-App/actions/runs/37047254377) passes; archive digest and APK signature verified. Ignored local file `artifacts/phase1/Paw-and-Us-phase1-c7d3405.apk`, SHA256 `d5944a20cad519315f2e33d972889d0acb41fe4f36c87ef75200232aa3ddb0f8`. The three-second fix shares web/APK code; no separate physical phone timer test is claimed.
 
 ## Known issues / pending evidence
 
@@ -50,7 +56,7 @@ User chose immediate signup without email verification for private testing; appl
 
 Hosted SQL was applied through the dashboard: CLI migration history must be reconciled before any future `db push`; do not replay migrations, reset or replace the hosted schema. Follow PHASE_1_SETUP.md.
 
-CI and deployed web/APK artifact smoke checks pass. User-observed two-device walking/reconnect/Away passed on the prior build; confirmation of the partner-movement fix is required. No phase-done tag has been created.
+CI, live web and APK artifact checks pass; user confirmed real two-device movement/reconnect/Away and the movement improvement. Phase 1 is complete, with the limitations above recorded. Tag `phase-1-done` identifies the completed report and unchanged verified client code.
 
 ## Next phase
 
