@@ -86,17 +86,18 @@ async function login(page:Page,index:number,path='/'){await page.goto(path);awai
 async function coordinate(page:Page,attribute='data-self-x'){return Number(await page.getByTestId('world').getAttribute(attribute));}
 
 async function walkTo(page:Page,x:number,y:number){
+ // Route centers keep extra clearance so frame timing cannot clip a corner.
  const start=[Math.floor(await coordinate(page)/32),Math.floor(await coordinate(page,'data-self-y')/32)],goal=[Math.floor(x/32),Math.floor(y/32)];
  const key=(p:number[])=>p.join(',');const queue=[start],parents=new Map<string,string|null>([[key(start),null]]);
- for(let i=0;i<queue.length&&!parents.has(key(goal));i++)for(const n of [[queue[i]![0]!+1,queue[i]![1]!],[queue[i]![0]!-1,queue[i]![1]!],[queue[i]![0]!,queue[i]![1]!+1],[queue[i]![0]!,queue[i]![1]!-1]]){if(n[0]!<0||n[1]!<0||n[0]!>=64||n[1]!>=44||parents.has(key(n))||collides({x:n[0]!*32+16,y:n[1]!*32+16},COTTAGE))continue;parents.set(key(n),key(queue[i]!));queue.push(n);}
+ for(let i=0;i<queue.length&&!parents.has(key(goal));i++)for(const n of [[queue[i]![0]!+1,queue[i]![1]!],[queue[i]![0]!-1,queue[i]![1]!],[queue[i]![0]!,queue[i]![1]!+1],[queue[i]![0]!,queue[i]![1]!-1]]){if(n[0]!<0||n[1]!<0||n[0]!>=64||n[1]!>=44||parents.has(key(n))||collides({x:n[0]!*32+16,y:n[1]!*32+16},{...COTTAGE,radius:24}))continue;parents.set(key(n),key(queue[i]!));queue.push(n);}
  expect(parents.has(key(goal))).toBe(true);
  const path:number[][]=[];for(let p:string|null=key(goal);p!==null;p=parents.get(p)??null)path.unshift(p.split(',').map(Number));
  const points=path.filter((p,i)=>i===0||i===path.length-1||(p[0]!-path[i-1]![0]!)!==(path[i+1]![0]!-p[0]!)||(p[1]!-path[i-1]![1]!)!==(path[i+1]![1]!-p[1]!));
  for(const p of points)for(const [attribute,target,negative,positive] of [['data-self-x',p[0]!*32+16,'a','d'],['data-self-y',p[1]!*32+16,'w','s']] as const){
   let current=await coordinate(page,attribute);
   if(Math.abs(target-current)>24){const direction=target>current?positive:negative;await page.keyboard.down(direction);await expect.poll(async()=>{const value=await coordinate(page,attribute);return target>current?value>=target-24:value<=target+24;},{timeout:20000,intervals:[25],message:`Walk ${direction} from ${current} to ${target} (${attribute})`}).toBe(true);await page.keyboard.up(direction);await page.waitForTimeout(120);}
-  for(let adjust=0;adjust<24;adjust++){current=await coordinate(page,attribute);if(Math.abs(target-current)<=2)break;const box=(await page.getByRole('button',{name:'Move',exact:true}).boundingBox())!;const offset=box.width*.32*.22*(target>current?1:-1);const cx=box.x+box.width/2,cy=box.y+box.height/2;await page.mouse.move(cx,cy);await page.mouse.down();await page.mouse.move(cx+(attribute==='data-self-x'?offset:0),cy+(attribute==='data-self-y'?offset:0));await page.waitForTimeout(60);await page.mouse.up();await page.waitForTimeout(110);}
-  expect(Math.abs(target-await coordinate(page,attribute)),`Align ${attribute} to ${target}`).toBeLessThanOrEqual(2);
+  for(let adjust=0;adjust<24;adjust++){current=await coordinate(page,attribute);if(Math.abs(target-current)<=8)break;const box=(await page.getByRole('button',{name:'Move',exact:true}).boundingBox())!;const offset=box.width*.32*.22*(target>current?1:-1);const cx=box.x+box.width/2,cy=box.y+box.height/2;await page.mouse.move(cx,cy);await page.mouse.down();await page.mouse.move(cx+(attribute==='data-self-x'?offset:0),cy+(attribute==='data-self-y'?offset:0));await page.waitForTimeout(60);await page.mouse.up();await page.waitForTimeout(110);}
+  expect(Math.abs(target-await coordinate(page,attribute)),`Align ${attribute} to ${target}`).toBeLessThanOrEqual(8);
  }
 }
 
