@@ -10,11 +10,11 @@ Date: 2026-10-02. **IN PROGRESS — not phase-0-done.** User approved all refere
 | Browser checks | 4 passed in headless Edge; 1280x800, 844x390 touch and 390x844 entry; Phaser canvas, no horizontal overflow, empty/error states, private-key rejection, isolated sessions, disconnected/reconnect feedback |
 | Web bundle | Passed Vite production build; Phaser is a separate lazy chunk. Bundle size warning retained (engine ~319 KB gzip, main ~152 KB gzip); no performance claim on a low-end device |
 | Dependency reproducibility | Pinned official registry versions and lockfile. Slow Phaser download completed locally in byte ranges and checked against official npm SHA-512. Temporary local mirror removed; official lockfile passed verification and offline frozen install succeeded |
-| Membership/RLS/RPC migration | Written, not applied to hosted project. 17 pgTAP tests defined; local Docker is unavailable. CI DB verification pending |
+| Membership/RLS/RPC migration | Written, not applied to hosted project. All 17 pgTAP checks passed in GitHub CI using local Supabase/Docker on a standard Linux runner; local Docker on this Windows host is unavailable |
 | Hosted project | User supplied public URL/key, saved in ignored local env only. Public health check returned 404: migration not installed |
 | Vercel | Configuration ready, deployment pending account access. No live URL |
 | Android | Capacitor project generated, Java 21/SDK 36 present. First local build failed on Google Maven TLS downloads (AGP 8.13.0/repository 31.13.0), without disabling certificate checks. CI debug build configured as fallback. Landscape manifest. No phone or emulator proof yet |
-| GitHub | Existing public repository verified; CI and manual debug-APK workflows ready. Keepalive skips until URL is configured; public key secret also required |
+| GitHub | Foundation pushed as `966cd44`. [Web and DB CI passed](https://github.com/jaxgun-uwu28/Couple-App/actions/runs/37006195486). First APK workflow failed because sdkmanager was absent from PATH; fixed by checking the already-installed SDK 36 on Ubuntu 24.04. Keepalive skips until URL is configured; public key secret also required |
 | Web ↔ APK private ping | Not tested; requires migration, administrative test pair and device. No partner receipt or cross-couple channel denial claimed |
 
 Implemented: Phase 0 infrastructure foundation only. Files changed: workspace/tooling, apps/web and generated Android, packages/shared, supabase migration/tests/config, workflows, vercel.json, protocol/design/decision/quota/setup/status/changelog docs and asset provenance.

@@ -34,6 +34,8 @@ User's "looks good proceed" approves the remaining home/UI references and contin
 
 Files: root workspace/tooling; `apps/web` and generated Android; `packages/shared`; `supabase/migrations`, tests and config; `.github/workflows`; deployment config; protocol, setup and evidence docs. Account access is currently unavailable; prepare and test local artifacts while asking for the existing free project/account information. Never expose private keys.
 
+Build verification: user deferred hosted access and supplied public configuration only. Retain Capacitor's AGP 8.13.0; local Google Maven TLS download failure does not justify changing tooling or weakening HTTPS. Use the standard free GitHub Ubuntu 24.04 runner's already-installed SDK 36 as the APK fallback. Its SDK manager is not on PATH, so validate the installed platform/build-tools directly. Native shell hides system bars with a swipe to restore them; landscape and disabled cloud backup protect the intended layout and local auth data. Still no gameplay or new visual system.
+
 ### 2026-10-02 — Landscape HUD accepted; continue Phase 0 mockups
 
 User accepted the revised HUD ("okay that is more like it"). Record horizontal gameplay, independent left-side icons, hidden/shown Chat and physical arcade Play as the accepted reference. Carry this and the selected art direction into remaining house/UI mockups under the existing Phase 0 continuation. Do not infer infrastructure or gameplay authorization; no Phase 1 work.
