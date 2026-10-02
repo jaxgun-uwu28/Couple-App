@@ -20,6 +20,10 @@ Log every architecture or scope decision here (date, decision, reason, alternati
 
 ## Decisions made
 
+### 2026-10-02 — Isolated live authorization verification
+
+With physical web/APK messaging confirmed, finish the existing Phase 0 authorization requirement using an ignored local-only test page and the user-created unrelated account. Use the installed Supabase SDK, in-memory Auth (no saved password/session), positive controls on its own membership/channel, then negative cross-couple reads, private subscription and private HTTP broadcast. Human enters the existing password directly in this local page. Display only test outcomes/receipt IDs; never expose Auth tokens. Stop failed-channel retries and sign out/close the temporary test page after testing. No production UI, dependency, schema, policy, RPC or event changes; no authority bypass or administrative key.
+
 ### 2026-10-02 — Phase 0 phone scrolling and recovery feedback fixes
 
 User's installed debug APK cannot swipe from the large test canvas to the account controls. Phaser's default touch capture prevents browser scrolling; this static diagnostic canvas has no gameplay input. Disable its touch capture/wheel prevention, allow vertical touch scrolling, and bound its responsive size to the short viewport while preserving its 16:9 aspect ratio. Keep landscape/native immersive mode and approved future game visuals unchanged. The local client also recovered automatically after a join error while retaining the old error message: make visible feedback follow transport state transitions. Add genuine touch-swipe and delayed-join recovery regressions, verify web/CI, then produce an updated debug APK for the user's phone. No new service, dependency, persistent schema, RPC or event.

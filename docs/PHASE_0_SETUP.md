@@ -66,13 +66,15 @@ cd apps/web/android
 
 Output: `apps/web/android/app/build/outputs/apk/debug/app-debug.apk`. Debug-signed, landscape activity; not a production release. Install by sideloading on the test phone. GitHub's `Phase 0 debug APK` workflow builds on relevant main changes or manual dispatch and retains the artifact for three days. The verified scrolling fix is locally available at ignored `artifacts/phase0/PawAndUs-phase0-scroll-fix.apk`; checksum and build-run link are in PHASE_0_STATUS.md. Do not use the earlier `PawAndUs-phase0-debug.apk`, which traps canvas swipes.
 
-The old and replacement CI debug builds have different signing certificates (verified with apksigner); Android will reject an in-place update. Uninstall the old debug app, then sideload the replacement. This clears only device-local public setup/Auth storage; hosted accounts and memberships remain. The CI APK starts with the public setup form, so enter the project's public URL/key again before signing in with the second provisioned test account. Confirm an upward swipe over the canvas reaches the email/password fields and lower connection/ping controls. Physical-phone verification and web ↔ Android receipt are still pending; headless touch tests are not a substitute.
+The old and replacement CI debug builds have different signing certificates (verified with apksigner); Android will reject an in-place update. Uninstall the old debug app, then sideload the replacement. This clears only device-local public setup/Auth storage; hosted accounts and memberships remain. The CI APK starts with the public setup form, so enter the project's public URL/key again before signing in with the second provisioned test account. Confirm an upward swipe over the canvas reaches the email/password fields and lower connection/ping controls. On 2026-10-02 the user confirmed the physical phone works and connects, receives a new web ping and successfully disconnects/reconnects. The live browsers received Android pings before and after that recovery check. Background recovery, one-minute idle and live unrelated-channel denial checks also passed; see PHASE_0_STATUS.md.
 
 ## Keepalive and quotas
 
 In GitHub Actions configuration set repository variable `SUPABASE_URL` and variable or optional secret `SUPABASE_ANON_KEY` to the **public** key. Secret takes precedence if both exist. The two public repository variables are configured. The scheduled workflow calls read-only `health` approximately every three days; delayed/disabled workflows or failed requests can still permit pausing. No private DB credentials. Standard hosted Linux runners, no large-runner usage, no paid overage. Supabase SDK heartbeats/token refresh are transport overhead; the application sends no automated ping traffic.
 
 ## Required live evidence before Phase 0 completion
+
+Completed on 2026-10-02; the steps below remain the verification procedure. Phase 1 requires explicit approval after the Phase 0 report.
 
 1. Record Free plan/no paid add-ons and deployed URL; verify canvas on desktop and mobile browser.
 2. Apply migration and run all pgTAP tests successfully; verify RLS on all app tables and private-channel settings.

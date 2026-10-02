@@ -1023,10 +1023,12 @@ Must include:
 
 ## 26. Master Feature Checklist (track completion)
 
-**Design approvals (record in DESIGN.md):** [ ] Perspective [ ] Character [ ] Cat [ ] Dog [ ] House/furniture [ ] UI/HUD [ ] Palette + typography [ ] Animation language [ ] Sound direction [ ] 18 mockups reviewed
+Phase 0 verified on 2026-10-02: architecture/quota research, approved concept references, deployed Phaser canvas, installed debug APK, bidirectional web/Android pings, recovery/idle checks and live cross-couple authorization denial. Checked infrastructure items apply to the current Phase 0 foundation; gameplay and Phase 1 onward remain unimplemented. Evidence: `docs/PHASE_0_STATUS.md`. Awaiting approval for Phase 1.
+
+**Design approvals (record in DESIGN.md):** [x] Perspective [x] Character [x] Cat [x] Dog [x] House/furniture [x] UI/HUD [x] Palette + typography [x] Animation language [x] Sound direction [x] 18 mockups reviewed
 
 **Local-first:** [ ] IndexedDB cache + schema versioning [ ] Delta snapshot RPC [ ] Optimistic UI + rollback [ ] Offline queue + idempotency keys [ ] Offline policy table enforced [ ] Offline UX (chip/banner/syncing) [ ] Cache wipe on logout
-**Deploy/Free-tier:** [ ] Backend gate decision recorded (Supabase vs Vercel WS) [ ] RealtimeTransport abstraction [ ] Two-device preview testing from Phase 1 [ ] Supabase project + migrations [ ] RLS on ALL tables [ ] pgTAP RLS tests [ ] Vercel deploy [ ] Capacitor Android shell [ ] Signed release APK [ ] GitHub Release + in-app update check [ ] Keep-alive cron [ ] Backup action [ ] Photo compression + quotas [ ] iPhone PWA install guide
+**Deploy/Free-tier:** [x] Backend gate decision recorded (Supabase vs Vercel WS) [x] RealtimeTransport abstraction [ ] Two-device preview testing from Phase 1 [x] Supabase project + migrations [x] RLS on ALL tables [x] pgTAP RLS tests [x] Vercel deploy [x] Capacitor Android shell [ ] Signed release APK [ ] GitHub Release + in-app update check [x] Keep-alive cron [ ] Backup action [ ] Photo compression + quotas [ ] iPhone PWA install guide
 **Platform:** [ ] Auth [ ] Pairing/invite [ ] Unlink/delete/export [ ] Settings [ ] PWA [ ] Push [ ] i18n [ ] Accessibility [ ] Analytics (privacy-safe) [ ] Error reporting
 **World:** [ ] Tiled map [ ] Collision [ ] Nav grid [ ] Y-sorting [ ] Doors [ ] Day/night [ ] Minimap [ ] Camera
 **Movement/Net:** [ ] Realtime channel + Presence [ ] Dead-reckoning broadcast [ ] Interpolation [ ] Host-client election + handover [ ] Reconnect/resync [ ] SQL-side rate limits [ ] Protocol doc [ ] Latency indicator [ ] Message-budget counter
