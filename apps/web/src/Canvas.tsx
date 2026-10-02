@@ -18,6 +18,8 @@ export function Canvas() {
       game = new Phaser.Game({
         type: Phaser.AUTO, parent: container.current,
         backgroundColor: '#F8F0F2', width: 960, height: 540,
+        // This static probe must let phone swipes reach the account controls.
+        input: { touch: { capture: false }, mouse: { preventDefaultWheel: false } },
         scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
         scene: Probe, audio: { noAudio: true },
       });

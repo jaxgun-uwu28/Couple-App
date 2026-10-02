@@ -51,7 +51,12 @@ function Probe({ config, onReset }: { config: PublicConfig; onReset: () => void 
   const [sent, setSent] = useState(0);
   useEffect(() => {
     client.auth.startAutoRefresh();
-    const stopState = transport.onState(setState);
+    const stopState = transport.onState(next => {
+      setState(next);
+      if (next === 'connecting') setMessage('Connecting to your private couple channel…');
+      else if (next === 'connected') setMessage('Connected to your private couple channel. Open this build on the other device and send a ping.');
+      else if (next === 'error') setMessage('Connection interrupted. Reconnect if it does not recover.');
+    });
     const stopPing = transport.onEvent('spike_ping', payload => {
       const ping = window.current.accept(payload);
       if (ping) setPings(previous => [ping, ...previous].slice(0, 20));

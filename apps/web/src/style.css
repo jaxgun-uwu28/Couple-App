@@ -4,8 +4,8 @@ body { margin: 0; }
 main { max-width: 1000px; margin: auto; padding: max(18px, env(safe-area-inset-top)) max(18px, env(safe-area-inset-right)) max(18px, env(safe-area-inset-bottom)) max(18px, env(safe-area-inset-left)); }
 h1 { margin-bottom: 0; } h2 { font-size: 1.25rem; }
 header p { margin-top: 6px; }
-.canvas { position: relative; width: 100%; aspect-ratio: 16 / 9; overflow: hidden; }
-.canvas canvas { display: block; }
+.canvas { position: relative; width: 100%; max-width: calc(55vh * 16 / 9); max-width: calc(55svh * 16 / 9); margin-inline: auto; aspect-ratio: 16 / 9; overflow: hidden; touch-action: pan-y; }
+.canvas canvas { display: block; touch-action: pan-y; }
 section { border: 1px solid #9bbbd0; border-radius: 16px; background: #fff9fa; padding: 20px; }
 form { display: flex; flex-wrap: wrap; align-items: end; gap: 12px; }
 label { display: grid; gap: 6px; flex: 1 1 240px; }

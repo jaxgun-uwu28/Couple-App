@@ -20,6 +20,14 @@ Log every architecture or scope decision here (date, decision, reason, alternati
 
 ## Decisions made
 
+### 2026-10-02 — Phase 0 phone scrolling and recovery feedback fixes
+
+User's installed debug APK cannot swipe from the large test canvas to the account controls. Phaser's default touch capture prevents browser scrolling; this static diagnostic canvas has no gameplay input. Disable its touch capture/wheel prevention, allow vertical touch scrolling, and bound its responsive size to the short viewport while preserving its 16:9 aspect ratio. Keep landscape/native immersive mode and approved future game visuals unchanged. The local client also recovered automatically after a join error while retaining the old error message: make visible feedback follow transport state transitions. Add genuine touch-swipe and delayed-join recovery regressions, verify web/CI, then produce an updated debug APK for the user's phone. No new service, dependency, persistent schema, RPC or event.
+
+### 2026-10-02 — Administrative Phase 0 test memberships
+
+User confirmed the three requested test accounts are created. Use the two similarly named accounts as seats 1/2 of one empty test couple, and the third account as seat 1 of a separate empty couple for isolation checks. Inspect confirmation and existing memberships before inserting; never move or overwrite an existing membership. Keep account emails, UUIDs and credentials out of tracked examples/evidence. Administrative fixture provisioning uses the existing schema and policies; no client pairing flow, new credential, RPC or gameplay is added. Verify the actual persisted memberships under authenticated RLS with rollback-only role changes, then hand off password entry for live client sign-in.
+
 ### 2026-10-02 — Continue with hosted Phase 0 deployment
 
 User asked to start the next step after connecting Supabase. Continue within Phase 0 by importing the existing public GitHub repository into the authenticated personal Vercel Hobby account, using the repository root and tracked `vercel.json`. Configure only the supplied public project URL/publishable key as VITE build variables. Verify the hosted canvas and health connection; do not begin Phase 1 or change approved visuals. Preserve free plan defaults and use a `vercel.app` subdomain. Dashboard-applied foundation SQL must be recorded as applied with the official CLI migration repair command before any future `db push`; do not replay or reset the hosted migration.

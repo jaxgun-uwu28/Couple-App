@@ -16,7 +16,9 @@ pnpm dev
 
 The canvas works without a backend. For ping testing, copy `apps/web/.env.example` to `apps/web/.env.local` and supply only the public project URL and anon/publishable key, or enter those public values in the spike's setup form. Runtime public configuration is saved per device; secrets are rejected. Never put an administrative secret in any `VITE_` variable. CI builds without cloud credentials and tests empty/error setup states.
 
-Browser checks: `pnpm exec playwright install chromium`, then `pnpm test:e2e`. On this Windows host, `PLAYWRIGHT_CHANNEL=msedge` uses the installed Edge browser. Browser tests verify a canvas, touch-sized controls, no viewport overflow, rejected private keys, separate contexts and disconnected/error states; they are **not** live multiplayer proof.
+Browser checks: `pnpm exec playwright install chromium`, then `pnpm test:e2e`. On this Windows host, `PLAYWRIGHT_CHANNEL=msedge` uses the installed Edge browser. Six browser checks verify canvas sizing, touch-sized controls, actual swipes from the landscape canvas to setup/account fields, no viewport overflow, rejected private keys, separate contexts and disconnected/error/recovered states. Recovery uses mocked HTTP/WebSocket fixtures; these automated checks are **not** live multiplayer proof.
+
+The Phase 0 static canvas permits vertical page gestures and is limited to 55% of viewport height, preserving its 16:9 shape. This fixes the installed phone build trapping swipes before the account form. Native landscape remains enabled. The future interactive house follows the approved HUD and input design in its own phase.
 
 ## Supabase Free project
 
@@ -25,6 +27,8 @@ Use an existing dedicated Free project, with no payment method or upgrade. Inspe
 The existing `ncopulzhlthauttyrvgo` project was inspected and the exact `20261002000100_phase0_foundation.sql` migration applied through the dashboard on 2026-10-02. **Do not run that migration again.** The dashboard does not populate CLI migration history. Before the first future CLI push, authenticate locally, link this project, run `supabase migration repair 20261002000100 --status applied`, and confirm `supabase migration list` agrees with the tracked file. This repairs history only; never use a hosted reset. See the [official migration repair reference](https://supabase.com/docs/reference/cli/supabase-migration-repair).
 
 Disable **Allow public access** under Realtime settings. Keep signup disabled for this spike; create two test users through Auth's administrator UI, and assign them seats 1 and 2 in one admin-created couple. Use an additional unrelated couple to test isolation. The spike does not provide a membership-writing client or pairing RPC.
+
+The user created three confirmed accounts, and their administrative memberships are now provisioned: two members in one test couple, one member in a separate couple. Both existing memberships and confirmation were inspected before the atomic guarded insert. Real-account DB role checks passed for own data and cross-couple denial. Keep account-specific SQL and identifiers in ignored local files, not tracked migrations. Two different browser origins (live Vercel and localhost) signed in independently with human-entered passwords and exchanged private pings in both directions. Browser-to-browser testing is a preliminary check; actual web-to-APK proof remains required. After a page reload, use Reconnect to reuse the existing local Auth session rather than entering passwords again.
 
 Admin-only provisioning example, replacing placeholders with the test users' UUIDs (no passwords):
 
