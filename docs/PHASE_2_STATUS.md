@@ -1,6 +1,6 @@
 # Phase 2 — Shared House World
 
-Status 2026-10-03: **implemented and automated checks passed; production publication approval and real web/Android exploration pending**. User approved Phase 2 and spacing A. Do not tag complete or begin Phase 3 until the two-device check and user approval. Code is on `phase2-house-world`; the production/main build remains Phase 1.
+Status 2026-10-03: **published to main and Vercel; automated checks passed; real web/Android exploration pending**. User approved Phase 2, spacing A and explicitly approved production publication. Main was fast-forwarded to the verified Phase 2 branch. Do not tag complete or begin Phase 3 until the two-device check and user approval.
 
 ## Implemented
 
@@ -40,15 +40,16 @@ Exact private map-version channel suffix separates the full house from old test-
 - Hosted: 28 interaction/RLS/idempotency/expiry assertions plus six private Broadcast/Presence authorization checks passed; no test fixtures persisted.
 - Database CI passed 99 pgTAP assertions plus real concurrent invite and world actions. World race yields one seat winner/one BUSY; simultaneous toggles serialize without lost updates.
 - Final CI `37054851388` passed for app source `2e0dc12`: web and database jobs succeeded, including the portable full-house route and both real transaction concurrency scripts. APK build `37054855277` succeeded for the same source.
+- Production verified at https://couple-app-web-two.vercel.app/: existing authenticated account opened the five-room home, joined its private channel with Connected status, and opened the labeled five-room map. No browser warning/error logs during this check. Screenshot: `artifacts/phase2/live-full-house.png`.
 
 APK: `artifacts/phase2/Paw-and-Us-phase2-2e0dc12.apk`, SHA-256 `5e59461b0b787157f17b7e60753e88f81084fd4687f48ffa5ec149923e43f18b`. Download archive digest and Android signature/package/SDK metadata verified. Package `com.pawandus.app`, min SDK 24, target 36. Native orientation/lifecycle/storage guards preserved.
 
 ## Known Issues
 
-Automatic approval review rejected the requested fast-forward to main/production publication before the physical-device gate, because it did not consider the existing broad Phase 2/push authorization specific enough for that publication. No merge, main push or workaround was executed. The concrete tested source, verified APK and this report are ready for explicit publication approval. After publication both web and phone need the matching Phase 2 client to share its map-version channel.
+Automatic approval review initially required specific production publication approval. The user then explicitly approved publishing Phase 2 to main and Vercel; the fast-forward/push succeeded and the live connection was verified. Both web and phone need the matching Phase 2 client to share its map-version channel.
 
 Real web-to-phone full-house exploration is **not yet verified**. Android debug signing certificates differ from the previous build, so Android may require uninstalling the old debug app before installing this APK; sign in again afterwards. Server account/home data remains in Supabase. Final modular character art/animations, game selection/content, cooking/cleaning systems, chat and new day/night simulation remain deferred to their own approved work. Current poses are framework placeholders.
 
 ## Next Phase
 
-Finish current-phase deployment/real-device verification and obtain approval. Phase 3 Character System stays unstarted.
+Finish current-phase real-device verification and obtain approval. Phase 3 Character System stays unstarted.

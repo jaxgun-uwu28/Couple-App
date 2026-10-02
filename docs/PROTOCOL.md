@@ -2,7 +2,7 @@
 
 Document every Realtime Broadcast event and every RPC here, in the same change that adds it.
 
-## Phase 2 world contracts (local implementation; hosted verification pending)
+## Phase 2 world contracts (hosted world and private-channel checks passed)
 
 `cottage-v1` uses layout version 2, 2048×1408 geometry, 120px/s feet collision, five named room IDs and existing motion events/smoothing. `PLAYER_ROOM_CHANGED` carries the same validated full motion frame. Phase 1 geometry remains available for old snapshots/tests. Phase 2 Presence advertises `app_version: phase2`; versioned private channel `house:<couple_id>:cottage-v1` separates incompatible maps. Membership policies must authorize this exact suffix as well as the existing channel; no arbitrary topics.
 
