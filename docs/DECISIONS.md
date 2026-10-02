@@ -1,5 +1,9 @@
 # DECISIONS
 
+## Phase 1 movement clock correction — 2026-10-03
+
+Use Phaser's unsmoothed `game.loop.rawDelta` for the collision/movement step. Its default smoothed delta clamps unfocused/slow frames to a target frame duration, making local movement slower than the velocity sent to the partner on CI and slow devices. Keep bounded collision substeps and the existing 250ms cap; rendering/camera can retain smoothing. The multiplayer browser case gets a 60-second total timeout because it includes two browser contexts, touch, idle observation, reconnect and collision; assertions are unchanged.
+
 ## Phase 1 Android build configuration — 2026-10-02
 
 User selected immediate signup without email verification for private testing on 2026-10-02. Hosted Supabase registration was enabled and Confirm email disabled through the existing authenticated dashboard. Anonymous sign-in remains disabled. The app still handles confirmation-required responses. Free custom SMTP/password-reset delivery is deferred until the app is shared beyond private testing; no paid email service or credential was added.

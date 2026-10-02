@@ -80,6 +80,7 @@ test('signup confirmation, invalid invite, create/cancel and session persistence
 });
 
 test('two sessions move, collide, stop idle traffic and reconnect at 150ms latency',async({browser})=>{
+  test.setTimeout(60000);
   const app=fixture();app.paired();const aContext=await browser.newContext({viewport:{width:1280,height:800}});const bContext=await browser.newContext({viewport:{width:844,height:390},hasTouch:true,isMobile:true});
   await app.install(aContext,0);await app.install(bContext,1);const a=await aContext.newPage();const b=await bContext.newPage();await login(a,0);await login(b,1);
   await expect(a.getByText('Connected',{exact:true})).toBeVisible();await expect(b.getByText('Connected',{exact:true})).toBeVisible();await expect(a.locator('canvas')).toBeVisible();
