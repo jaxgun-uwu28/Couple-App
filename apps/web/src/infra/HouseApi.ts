@@ -54,7 +54,7 @@ export class HouseApi {
     if(response.error)throw new Error('The action could not connect. Try again.');
     const parsed=interactionResultSchema.safeParse(response.data);if(!parsed.success)throw new Error('The action response could not be verified.');
     this.interactions.delete(intent);
-    if(!parsed.data.ok){const messages={BUSY:'That spot is busy. Try the other spot.',OUT_OF_RANGE:'Move closer to interact.',UNAVAILABLE:'This activity is coming in a later phase.',ALREADY_USING:'Leave your current activity first.',NOT_OWNER:'That activity ended. Try again.'};throw new Error(messages[parsed.data.code as keyof typeof messages]??'That action is unavailable. Reconnect to check your home.');}
+    if(!parsed.data.ok){const messages={BUSY:'That spot is busy. Try the other spot.',OUT_OF_RANGE:'Move closer to interact.',UNAVAILABLE:'This activity is coming soon.',ALREADY_USING:'Leave your current activity first.',NOT_OWNER:'That activity ended. Try again.'};throw new Error(messages[parsed.data.code as keyof typeof messages]??'That action is unavailable. Reconnect to check your home.');}
   }
   private interactions=new Map<string,{p_action:string;p_object_id:string|null;p_slot_id:string|null;p_session_id:string;p_x:number;p_y:number;p_idempotency_key:string}>();
 }
