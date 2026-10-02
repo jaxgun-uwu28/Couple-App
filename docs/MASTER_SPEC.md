@@ -1023,7 +1023,7 @@ Must include:
 
 ## 26. Master Feature Checklist (track completion)
 
-Phase 0 verified on 2026-10-02. Phase 1 completed on 2026-10-03: automated/browser/database/security checks pass; user confirmed real web/Android walking, reconnect, Away and reduced movement jitter. Interact/E hint clears after three seconds. Checked foundation items below apply to the Phase 1 scope; future world/game systems remain unchecked. Evidence: `docs/PHASE_0_STATUS.md` and `docs/PHASE_1_STATUS.md`. Phase 2 has not started.
+Phase 0 verified on 2026-10-02. Phase 1 completed on 2026-10-03: automated/browser/database/security checks pass; user confirmed real web/Android walking, reconnect, Away and reduced movement jitter. Interact/E hint clears after three seconds. Phase 2 authorized and spacing A approved on 2026-10-03: production Tiled map, full-house client and additive hosted interactions are implemented; final deployment/native two-player exploration verification remains pending. Checked foundation items below apply to verified scope; future systems remain unchecked. Evidence: `docs/PHASE_0_STATUS.md`, `docs/PHASE_1_STATUS.md` and `docs/PHASE_2_STATUS.md`. No Phase 3 authorization inferred.
 
 **Design approvals (record in DESIGN.md):** [x] Perspective [x] Character [x] Cat [x] Dog [x] House/furniture [x] UI/HUD [x] Palette + typography [x] Animation language [x] Sound direction [x] 18 mockups reviewed
 
