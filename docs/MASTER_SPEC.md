@@ -1023,7 +1023,7 @@ Must include:
 
 ## 26. Master Feature Checklist (track completion)
 
-Phase 0 verified on 2026-10-02: architecture/quota research, approved concept references, deployed Phaser canvas, installed debug APK, bidirectional web/Android pings, recovery/idle checks and live cross-couple authorization denial. Phase 1 was authorized and is implemented with verification in progress; final deployment and real web/Android walking checks are pending. Evidence: `docs/PHASE_0_STATUS.md` and `docs/PHASE_1_STATUS.md`. Phase 2 has not started.
+Phase 0 verified on 2026-10-02: architecture/quota research, approved concept references, deployed Phaser canvas, installed debug APK, bidirectional web/Android pings, recovery/idle checks and live cross-couple authorization denial. Phase 1 is deployed with passing automated checks and user-confirmed real web/Android walking, reconnect and Away. A partner-movement jitter fix is deployed and awaiting phone recheck before Phase 1 completion. Evidence: `docs/PHASE_0_STATUS.md` and `docs/PHASE_1_STATUS.md`. Phase 2 has not started.
 
 **Design approvals (record in DESIGN.md):** [x] Perspective [x] Character [x] Cat [x] Dog [x] House/furniture [x] UI/HUD [x] Palette + typography [x] Animation language [x] Sound direction [x] 18 mockups reviewed
 

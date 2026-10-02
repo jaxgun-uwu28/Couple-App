@@ -2,7 +2,7 @@
 
 Authorized 2026-10-02; updated 2026-10-03 (Asia/Manila). Phase 1 is **not complete**. Phase 2 has not started. The test room uses placeholders matching the approved top-down chibi / Rose & Sky / landscape design.
 
-User subsequently tested the APK and web together: both connected, reconnect worked, and Away worked. Local movement was smooth, but the partner view lagged/jumped during changes in movement. Treat this as an open Phase 1 movement defect; signal/Wi-Fi quality is unmeasured. A bounded correction/buffer and timely-stop fix is being verified before replacement deployment/APK. Earlier passing checks below describe commit `3928fc2`, not the unverified fix.
+User subsequently tested the APK and web together: both connected and walked, reconnect worked, and Away worked. Local movement was smooth, but the partner view lagged/jumped during changes in movement. Signal/Wi-Fi quality is unmeasured. A bounded correction/buffer and timely-stop fix is tested and deployed as `85dea56`; real-device confirmation of this fix is pending. Earlier foundation checks below describe `3928fc2`.
 
 ## Implemented
 
@@ -34,7 +34,15 @@ Private Broadcast/Presence authorization only for own couple. Typed player/sync 
 - Final [CI run 37042041741](https://github.com/jaxgun-uwu28/Couple-App/actions/runs/37042041741) passed web and database jobs for commit `3928fc2`: typecheck/build, 30 unit tests, all 11 browser tests, 65 pgTAP assertions and concurrent invite join. Earlier runs exposed a slow-frame mismatch and a collision test that could walk past the table while polling a remote avatar; integration uses rawDelta and the test verifies local alignment before checking the table edge.
 - Commit `3928fc2` fast-forwarded to main. Vercel production deployment `NtXH6fibxGUvrdupjjE4BVNDj7ok` is Ready. Existing signed-in live and local accounts open the backfilled room, both show Connected, and each sees the partner's initial position. Local hosted reconnection passes. No account password or membership change was needed.
 - Final [APK build 37042314663](https://github.com/jaxgun-uwu28/Couple-App/actions/runs/37042314663) passed for the same commit. Verified GitHub archive digest, APK v2 signature, package/version, SDK 24 minimum/36 target, sensorLandscape, backup off, App/Preferences plugins, bundled hosted URL/public key and rawDelta code. No `sb_secret_` key found. Local APK: ignored `artifacts/phase1/Paw-and-Us-phase1-3928fc2.apk`, SHA256 `c870dbe4eb3a620a7aa409526dfd3e40db924af5f0a3ae016fc08bf0f66ddcd8`. The automatic duplicate APK build of the identical main commit was cancelled after this artifact succeeded.
-- Actual web/phone walking and native recovery remain pending. User was given the replacement APK and asked to sign in, walk both devices, verify stopped positions/collision and reconnect. Phase 0 phone pings do not satisfy Phase 1 walking DoD.
+- User confirmed actual Phase 1 web/phone walking, connection, reconnect and Away. Reported partner movement jitter remains open until the new fix is checked on those devices. No claim is made that network quality was measured or that a timed native idle-minute observation was performed.
+
+## Movement fix — deployed; phone recheck pending
+
+- `85dea56`: optional monotonic motion time negotiated through Presence for compatibility with the previous strict-schema APK (including old observer devices). Receiver keeps 32 keyframes/three seconds, uses a 100ms playback delay, bounds visible correction speed, and freezes Away at the drawn position. Sender coalesces moving changes at 100ms and reserves the tenth rolling-second slot for stopping. One correction/second only while moving; idle motion remains zero. No new library, periodic traffic, database change or RPC.
+- [CI 37045121656](https://github.com/jaxgun-uwu28/Couple-App/actions/runs/37045121656) passes typecheck/build, **37 unit tests**, **12 browser tests**, **65 pgTAP assertions** and concurrent join. New cases cover late legacy stops, variable-delay turns/stops, burst delivery/clock regression, Away freeze, slow/stalled render frames, rapid stick release, and legacy Presence negotiation. Fixture latency and unit schedules are simulated; they do not measure the user's network.
+- Vercel production `4twSqryXNHjmnsXCEeQ8cvAhbC1B` is Ready for this commit. Live browser reconnects with the same built module `/assets/index-D7NtQHK3.js`. Local verification room exited to leave control available to the phone.
+- [APK 37045626589](https://github.com/jaxgun-uwu28/Couple-App/actions/runs/37045626589) succeeds for the same commit; archive digest and APK v2 signature pass. Bundled URL/public key and new motion clock fields verified; no `sb_secret_` key found. Ignored local file `artifacts/phase1/Paw-and-Us-phase1-movement-fix-85dea56.apk`; SHA256 `7cabbbf6082e16f4e26086fdbf8048380bc8f0f44dade1ecefb7704355f9c961`.
+- User received the new APK and instructions to refresh web, check straight movement/quick turns/stops, Reconnect and Away. Awaiting response. Some partner delay remains inherent; severe stalls/loss cannot be reconstructed and buffering adds 100ms intentionally. Phase 1 stays open; no done tag.
 
 ## Known issues / pending evidence
 
@@ -42,7 +50,7 @@ User chose immediate signup without email verification for private testing; appl
 
 Hosted SQL was applied through the dashboard: CLI migration history must be reconciled before any future `db push`; do not replay migrations, reset or replace the hosted schema. Follow PHASE_1_SETUP.md.
 
-Final CI and deployed web/APK artifact smoke checks pass. User-observed two-device walking, reconnect and native background/foreground recovery are still required. No phase-done tag has been created.
+CI and deployed web/APK artifact smoke checks pass. User-observed two-device walking/reconnect/Away passed on the prior build; confirmation of the partner-movement fix is required. No phase-done tag has been created.
 
 ## Next phase
 

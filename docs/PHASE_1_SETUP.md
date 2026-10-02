@@ -36,3 +36,5 @@ The root URL opens the game/account flow. `?invite=CODE` retains pairing through
 ## Required real-device check
 
 Sign in as the two existing partner users on web and the replacement APK. Walk both directions; partner must see motion and final stopped positions. Check walls/furniture, joystick, Settings/scrolling, reconnect, then leave the phone with Home for 30 seconds and return. Movement and Presence must recover; a subsequent idle minute must send no motion. Also verify newest-device takeover if the same user is opened in another tab. Record actual observations in PHASE_1_STATUS.md; never substitute mocked/SQL checks for the real two-device DoD.
+
+For the movement fix, install the APK matching `85dea56` and refresh web. Clock negotiation uses legacy-compatible packets while an old device remains subscribed; both updated receivers are needed for the full buffered behavior. Test quick turns and releases in the partner view, then Reconnect/Away. Some delay remains normal; record network type and residual jumps if observed. Current artifact/evidence is in PHASE_1_STATUS.md.
