@@ -64,7 +64,9 @@ cd apps/web/android
 .\gradlew.bat assembleDebug
 ```
 
-Output: `apps/web/android/app/build/outputs/apk/debug/app-debug.apk`. Debug-signed, landscape activity; not a production release. Install by sideloading on the test phone. GitHub's `Phase 0 debug APK` workflow builds on relevant main changes or manual dispatch and retains the artifact for three days. A verified build is locally available at ignored `artifacts/phase0/PawAndUs-phase0-debug.apk`; checksum and build-run link are in PHASE_0_STATUS.md. The CI APK starts with the public setup form, so enter the project's public URL/key before signing in with a provisioned test account.
+Output: `apps/web/android/app/build/outputs/apk/debug/app-debug.apk`. Debug-signed, landscape activity; not a production release. Install by sideloading on the test phone. GitHub's `Phase 0 debug APK` workflow builds on relevant main changes or manual dispatch and retains the artifact for three days. The verified scrolling fix is locally available at ignored `artifacts/phase0/PawAndUs-phase0-scroll-fix.apk`; checksum and build-run link are in PHASE_0_STATUS.md. Do not use the earlier `PawAndUs-phase0-debug.apk`, which traps canvas swipes.
+
+The old and replacement CI debug builds have different signing certificates (verified with apksigner); Android will reject an in-place update. Uninstall the old debug app, then sideload the replacement. This clears only device-local public setup/Auth storage; hosted accounts and memberships remain. The CI APK starts with the public setup form, so enter the project's public URL/key again before signing in with the second provisioned test account. Confirm an upward swipe over the canvas reaches the email/password fields and lower connection/ping controls. Physical-phone verification and web ↔ Android receipt are still pending; headless touch tests are not a substitute.
 
 ## Keepalive and quotas
 
