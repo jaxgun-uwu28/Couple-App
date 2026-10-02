@@ -1,5 +1,11 @@
 # DECISIONS
 
+## Phase 1 partner movement correction — 2026-10-03
+
+User verified real web/Android connection, reconnect and Away, but reported smooth local movement with delayed/jumping partner movement. Keep Phase 1 open while fixing this; network quality has not been measured and is not assumed to be the sole cause. Preserve approved visuals, database authority, transport and moving-only one-second corrections.
+
+Add a small 100ms receiver playback buffer using per-session monotonic motion time, and bound visible correction speed so delayed direction/stop updates ease rather than jump. Sender timestamps are peer claims only, not wall clocks or authorization. Advertise clock support in optional Presence metadata; include optional motion time only when all other receiving devices advertise support (including observers), so the existing strict-schema APK continues receiving compatible packets during replacement. Legacy packets retain bounded dead reckoning without the buffer. Reserve one of the ten rolling-second motion slots for stopping and coalesce moving changes to at most one every 100ms. Do not increase periodic traffic or add a server/library. Freeze Away at the rendered position rather than easing back to an old packet anchor. Verify variable latency, burst delivery, direction changes, rapid joystick input, collision, idle traffic and legacy compatibility before deployment and phone recheck.
+
 ## Phase 1 movement clock correction — 2026-10-03
 
 Use Phaser's unsmoothed `game.loop.rawDelta` for the collision/movement step. Its default smoothed delta clamps unfocused/slow frames to a target frame duration, making local movement slower than the velocity sent to the partner on CI and slow devices. Keep bounded collision substeps and the existing 250ms cap; rendering/camera can retain smoothing. The multiplayer browser case gets a 60-second total timeout because it includes two browser contexts, touch, idle observation, reconnect and collision; assertions are unchanged.

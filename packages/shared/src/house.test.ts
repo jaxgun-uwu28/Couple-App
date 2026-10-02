@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { MotionBudget, RemoteMotion, WORLD, collides, motionSchema, movePoint, preferredSessions, velocity } from './house';
+import { MotionBudget, RemoteMotion, WORLD, collides, motionSchema, movePoint, preferredSessions, supportsMotionClock, velocity } from './house';
 import type { HousePresence, Motion } from './house';
 const frame: Motion = { user_id:'11111111-1111-4111-8111-111111111111',couple_id:'22222222-2222-4222-8222-222222222222',session_id:'33333333-3333-4333-8333-333333333333',seq:1,x:590,y:490,vx:0,vy:0,direction:'down',animation:'idle',room:'phase1-room' };
 describe('collision and movement', () => {
@@ -28,7 +28,15 @@ describe('free-tier motion budget', () => {
   it('caps rapid input changes at ten in every rolling second', () => {
     const budget=new MotionBudget();budget.reset(frame,0);let sent=0;
     for(let n=0;n<100;n++)if(budget.claim({...frame,vx:n+1,animation:'walk'},n*9))sent++;
-    expect(sent).toBe(10);expect(budget.claim({...frame,vx:1,animation:'walk'},1001)).toBe(true);
+    expect(sent).toBe(9);expect(budget.claim(frame,900)).toBe(true);expect(budget.claim({...frame,vx:1,animation:'walk'},1001)).toBe(false);expect(budget.claim({...frame,vx:1,animation:'walk'},1108)).toBe(true);
+  });
+  it('coalesces rapid stick changes but sends the final stop immediately', () => {
+    const budget=new MotionBudget();budget.reset(frame,0);
+    expect(budget.claim({...frame,vx:170,animation:'walk'},0)).toBe(true);
+    expect(budget.claim({...frame,vx:160,animation:'walk'},16)).toBe(false);
+    expect(budget.claim({...frame,vx:160,animation:'walk'},100)).toBe(true);
+    expect(budget.claim(frame,101)).toBe(true);
+    for(let time=102;time<60000;time+=16)expect(budget.claim(frame,time)).toBe(false);
   });
 });
 describe('remote motion at 150ms latency', () => {
@@ -54,6 +62,58 @@ describe('remote motion at 150ms latency', () => {
   });
   it('rejects malformed packets', () => {
     expect(motionSchema.safeParse({...frame,x:NaN}).success).toBe(false);expect(motionSchema.safeParse({...frame,seq:-1}).success).toBe(false);expect(motionSchema.safeParse({...frame,extra:'unknown'}).success).toBe(false);
+    expect(motionSchema.safeParse({...frame,motion_ms:-1}).success).toBe(false);
+  });
+  it('bounds visible correction after a delayed legacy stop and settles accurately', () => {
+    const remote=new RemoteMotion(frame);remote.accept({...frame,vx:170,animation:'walk'},0);
+    let previous=remote.sample(0,0);
+    for(let time=16;time<500;time+=16)previous=remote.sample(time,.016);
+    remote.accept({...frame,seq:2,x:620},500);
+    const next=remote.sample(516,.016);
+    expect(Math.hypot(next.x-previous.x,next.y-previous.y)).toBeLessThanOrEqual(170*1.4*.016);
+    for(let time=532;time<2500;time+=16)previous=remote.sample(time,.016);
+    expect(previous.x).toBeCloseTo(620,1);
+  });
+  it('buffers timed movement, smooths jittered turns/stops and preserves final position', () => {
+    const remote=new RemoteMotion(frame);
+    const packets=[
+      {arrival:150,value:{...frame,motion_ms:0,vx:170,animation:'walk' as const}},
+      {arrival:660,value:{...frame,seq:2,motion_ms:300,x:641,vx:0,vy:170,direction:'down' as const,animation:'walk' as const}},
+      {arrival:900,value:{...frame,seq:3,motion_ms:600,x:641,y:541}},
+    ];
+    let previous={x:frame.x,y:frame.y};let delivered=0;
+    for(let time=0;time<3000;time+=16){
+      while(packets[delivered]&&packets[delivered]!.arrival<=time){const packet=packets[delivered++]!;remote.accept(packet.value,packet.arrival);}
+      const point=remote.sample(time,.016);
+      expect(Math.hypot(point.x-previous.x,point.y-previous.y)).toBeLessThanOrEqual(170*1.4*.016+.00001);
+      expect(collides(point)).toBe(false);
+      if(time===240)expect(point.x).toBe(590); // Arrival + 100ms playback delay.
+      previous=point;
+    }
+    expect(previous.x).toBeCloseTo(641,1);expect(previous.y).toBeCloseTo(541,1);
+    expect(remote.accept(packets[1]!.value,3000)).toBe(false);
+  });
+  it('validates burst corrections against sender spacing and rejects clock regression', () => {
+    const remote=new RemoteMotion(frame);remote.accept({...frame,motion_ms:0,vx:170,animation:'walk'},150);
+    remote.accept({...frame,seq:2,motion_ms:1000,x:760,vx:170,animation:'walk'},2210);
+    remote.accept({...frame,seq:3,motion_ms:2000,x:930,vx:170,animation:'walk'},2220);
+    expect(remote.frame!.x).toBe(930);
+    expect(remote.accept({...frame,seq:4,motion_ms:1999},2300)).toBe(false);
+  });
+  it('freezes Away at the rendered position instead of an old correction anchor', () => {
+    const remote=new RemoteMotion(frame);remote.accept({...frame,motion_ms:0,vx:170,animation:'walk'},150);
+    let point=frame;
+    for(let time=166;time<750;time+=16)point={...frame,...remote.sample(time,.016)};
+    expect(point.x).toBeGreaterThan(620);remote.stop();
+    expect(remote.sample(10000,.1)).toEqual({x:point.x,y:point.y});
+  });
+  it('keeps pace at 20fps while bounding correction after a stalled frame', () => {
+    const remote=new RemoteMotion(frame);remote.accept({...frame,motion_ms:0,vx:170,animation:'walk'},150);
+    let previous={x:590,y:490};
+    for(let time=200;time<=1500;time+=50){const point=remote.sample(time,.05);expect(point.x-previous.x).toBeLessThanOrEqual(170*1.4*.05);previous=point;}
+    expect(previous.x).toBeGreaterThan(780);
+    remote.accept({...frame,seq:2,motion_ms:1350,x:820},1501);
+    const after=remote.sample(2001,.5);expect(Math.hypot(after.x-previous.x,after.y-previous.y)).toBeLessThanOrEqual(170*1.4*.1);
   });
 });
 it('selects newest device by absolute server time with deterministic ties', () => {
@@ -61,4 +121,12 @@ it('selects newest device by absolute server time with deterministic ties', () =
   const newer={...base,session_id:'55555555-5555-4555-8555-555555555555',joined_at:'2026-10-02T02:00:01Z'};
   expect(preferredSessions([newer,base]).get(frame.user_id)).toEqual(newer);
   expect(preferredSessions([{...base,joined_at:newer.joined_at},newer]).get(frame.user_id)).toEqual(newer);
+});
+it('enables the motion clock only when every other preferred device supports it', () => {
+  const own:HousePresence={user_id:frame.user_id,session_id:frame.session_id,joined_at:'2026-10-02T02:00:00Z',room:'phase1-room',status:'online',device:'web',app_version:'phase1',motion_clock:1};
+  const peer={...own,user_id:'55555555-5555-4555-8555-555555555555',session_id:'66666666-6666-4666-8666-666666666666'};
+  expect(supportsMotionClock([own],own.session_id)).toBe(false);
+  expect(supportsMotionClock([own,peer],own.session_id)).toBe(true);
+  expect(supportsMotionClock([own,{...peer,motion_clock:undefined}],own.session_id)).toBe(false);
+  expect(supportsMotionClock([own,peer,{...peer,session_id:'77777777-7777-4777-8777-777777777777',motion_clock:undefined}],own.session_id)).toBe(false);
 });

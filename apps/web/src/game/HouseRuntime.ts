@@ -1,5 +1,5 @@
 import { Capacitor } from '@capacitor/core';
-import { MotionBudget, RemoteMotion, clampPoint, facing, movePoint, preferredSessions, spawn, velocity } from '@paw/shared';
+import { MotionBudget, RemoteMotion, clampPoint, facing, movePoint, preferredSessions, spawn, supportsMotionClock, velocity } from '@paw/shared';
 import type { ConnectionState, HousePresence, HouseSnapshot, Motion, MotionEvent, Point } from '@paw/shared';
 import type { HouseMessage, HouseRealtimeTransport } from '../infra/HouseTransport';
 import type { HouseApi } from '../infra/HouseApi';
@@ -14,6 +14,7 @@ export class HouseRuntime {
   private local: Motion;
   private joinedAt: string;
   private timestampVerified = false;
+  private clockCompatible = false;
   private remotes = new Map<string,Remote>();
   private sessions = new Map<string,HousePresence>();
   private listeners = new Set<(view:RuntimeView)=>void>();
@@ -49,7 +50,7 @@ export class HouseRuntime {
     for(const id of this.remotes.keys())if(!this.snapshotValue.members.some(member=>member.user_id===id))this.remotes.delete(id);
   }
   private currentPresence(): HousePresence {
-    return {user_id:this.local.user_id,session_id:this.local.session_id,joined_at:this.joinedAt,room:'phase1-room',status:this.active&&!this.takeover?'online':'away',device:Capacitor.isNativePlatform()?'android':'web',app_version:'phase1'};
+    return {user_id:this.local.user_id,session_id:this.local.session_id,joined_at:this.joinedAt,room:'phase1-room',status:this.active&&!this.takeover?'online':'away',device:Capacitor.isNativePlatform()?'android':'web',app_version:'phase1',motion_clock:1};
   }
   private notify(){if(!this.disposed)this.listeners.forEach(listener=>listener(this.view()));}
   onView(listener:(view:RuntimeView)=>void){this.listeners.add(listener);listener(this.view());return()=>{this.listeners.delete(listener);};}
@@ -60,7 +61,7 @@ export class HouseRuntime {
       const self=member.user_id===this.local.user_id;
       const remote=this.remotes.get(member.user_id)!;
       if(!self && remote.offlineSince!==null && now-remote.offlineSince>30000)continue;
-      const frame=self&&!this.takeover?this.local:remote.motion.frame;
+      const frame=self&&!this.takeover?this.local:remote.motion.displayFrame;
       actors.push({id:member.user_id,name:self?'You':member.display_name,seat:member.seat,point:self&&!this.takeover?{x:this.local.x,y:this.local.y}:remote.point,direction:frame?.direction??'down',animation:frame?.animation??'idle',online:self&&!this.takeover?this.ready&&this.connection==='connected':remote.online,away:self?(!this.active||this.takeover):remote.away,local:self,lastSeen:self&&this.active?Date.now():remote.lastSeen});
     }
     return {connection:this.connection,ready:this.ready,message:this.feedback,takenOver:this.takeover,active:this.active,sent:this.sent,received:this.received,actors};
@@ -130,7 +131,9 @@ export class HouseRuntime {
       if(this.recovery)this.queuedRecovery=true;
       else{this.syncing=true;void this.recover().finally(()=>{this.syncing=false;});}
     }
-    const previous=this.sessions;this.sessions=preferredSessions(values.filter(value=>allowed.has(value.user_id)));
+    const allowedPresence=values.filter(value=>allowed.has(value.user_id));
+    this.clockCompatible=supportsMotionClock(allowedPresence,this.local.session_id);
+    const previous=this.sessions;this.sessions=preferredSessions(allowedPresence);
     const now=performance.now();
     for(const [id,remote] of this.remotes){
       const session=this.sessions.get(id);
@@ -161,6 +164,7 @@ export class HouseRuntime {
     if(frame.couple_id!==this.snapshotValue.couple_id||frame.session_id===this.local.session_id||!this.snapshotValue.members.some(member=>member.user_id===frame.user_id))return;
     const session=this.sessions.get(frame.user_id);
     if(!session||session.session_id!==frame.session_id)return;
+    if(session.status!=='online'&&message.event!=='PLAYER_LEFT')return;
     if(frame.user_id===this.local.user_id&&!this.takeover)return;
     const remote=this.remotes.get(frame.user_id)!;
     if(remote.motion.accept(frame,performance.now(),initial)){
@@ -169,7 +173,13 @@ export class HouseRuntime {
       this.notify();
     }
   }
-  private packet():Motion{return {...this.local,seq:++this.local.seq};}
+  private packet():Motion {
+    const frame={...this.local,seq:++this.local.seq};
+    // Existing APKs reject extra motion fields. Upgrade only after Presence
+    // advertises support on every other device receiving the channel, including
+    // an older observing device that has yielded control to a newer session.
+    return this.clockCompatible?{...frame,motion_ms:performance.now()}:frame;
+  }
   private async send(message:HouseMessage){if(this.disposed)return;await this.transport.send(message);this.sent++;}
   private sendMotion(event:MotionEvent){return this.send({event,payload:this.packet()});}
   private stopMotion(){this.local={...this.local,vx:0,vy:0,animation:'idle'};}

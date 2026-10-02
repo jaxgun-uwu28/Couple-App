@@ -2,6 +2,8 @@
 
 Authorized 2026-10-02; updated 2026-10-03 (Asia/Manila). Phase 1 is **not complete**. Phase 2 has not started. The test room uses placeholders matching the approved top-down chibi / Rose & Sky / landscape design.
 
+User subsequently tested the APK and web together: both connected, reconnect worked, and Away worked. Local movement was smooth, but the partner view lagged/jumped during changes in movement. Treat this as an open Phase 1 movement defect; signal/Wi-Fi quality is unmeasured. A bounded correction/buffer and timely-stop fix is being verified before replacement deployment/APK. Earlier passing checks below describe commit `3928fc2`, not the unverified fix.
+
 ## Implemented
 
 Email/password registration and sign-in/out, SDK session persistence, invite code/link pairing, create/refresh/cancel pending invites, private per-couple movement room, keyboard/joystick input, collision, local camera/partner cue, Settings, Presence, device takeover, reconnect/snapshot reconciliation and disposable scoped cache. Interact is a placeholder. Full house, character creator, pets, chat and games remain future phases.

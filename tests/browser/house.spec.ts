@@ -13,7 +13,7 @@ function decode(message:string|Buffer):[string|null,string|null,string,string,Re
   return[fields[0]!,fields[1]!,fields[2]!,'broadcast',{type:'broadcast',event:fields[3]!,payload:JSON.parse(message.subarray(offset).toString('utf8'))}];
 }
 function fixture() {
-  const peers=new Set<Peer>(); let members=0;let version=1;let invite='ABCD2345';let failSnapshot=false;let signupConfirmation=true;
+  const peers=new Set<Peer>(); let members=0;let version=1;let invite='ABCD2345';let failSnapshot=false;let signupConfirmation=true;let legacyClock=false;let clockPackets=0;
   const actions=new Map<string,unknown>();let createCount=0;
   const snapshot=(userId:string,since:number,known:string|null)=>{
     if(!members||(userId===ids[1]&&members<2))return{kind:'none',version:0,user_id:userId,server_time:new Date().toISOString()};
@@ -23,7 +23,7 @@ function fixture() {
   const send=(peer:Peer,event:string,payload:unknown,delay=0)=>{setTimeout(()=>{try{peer.socket.send(JSON.stringify([peer.joinRef,null,peer.topic,event,payload]));}catch{/* Closed test page. */}},delay);};
   const presence=()=>{const values=Object.fromEntries([...peers].filter(peer=>peer.presence).map(peer=>[String(peer.presence!.session_id),{metas:[{...peer.presence,phx_ref:peer.presence!.session_id}]}]));for(const peer of peers)send(peer,'presence_state',values);};
   return {
-    paired(){members=2;version=2;}, fail(value:boolean){failSnapshot=value;}, confirmation(value:boolean){signupConfirmation=value;}, get creates(){return createCount;},
+    paired(){members=2;version=2;}, fail(value:boolean){failSnapshot=value;}, confirmation(value:boolean){signupConfirmation=value;}, legacy(){legacyClock=true;}, get clocks(){return clockPackets;}, get creates(){return createCount;},
     async install(context:BrowserContext,index:number){
       const user={id:ids[index]!,aud:'authenticated',role:'authenticated',email:`player${index}@example.test`,user_metadata:{display_name:index===0?'Rose':'Sky'}};
       const encode=(value:unknown)=>Buffer.from(JSON.stringify(value)).toString('base64url');
@@ -57,8 +57,8 @@ function fixture() {
           const reply=(response:unknown={})=>socket.send(JSON.stringify([joinRef,ref,topic,'phx_reply',{status:'ok',response}]));
           if(event==='phx_join'){expect(topic).toBe(`realtime:house:${couple}`);peer={socket,topic,joinRef};peers.add(peer);reply();presence();}
           else if(event==='phx_leave'){if(peer)peers.delete(peer);peer=undefined;reply();presence();}
-          else if(event==='presence'&&peer){peer.presence=payload.payload as Record<string,unknown>;reply();presence();}
-          else if(event==='broadcast'&&peer){reply();for(const other of peers)if(other!==peer)send(other,'broadcast',payload,150);}
+          else if(event==='presence'&&peer){peer.presence={...payload.payload as Record<string,unknown>};if(legacyClock)delete peer.presence.motion_clock;reply();presence();}
+          else if(event==='broadcast'&&peer){const value=payload.payload as Record<string,unknown>;if(value?.motion_ms!==undefined)clockPackets++;reply();for(const other of peers)if(other!==peer)send(other,'broadcast',payload,150);}
           else reply();
         });
         socket.onClose(()=>{if(peer)peers.delete(peer);presence();});
@@ -102,7 +102,14 @@ test('two sessions move, collide, stop idle traffic and reconnect at 150ms laten
   await a.keyboard.up(alignKey);
   expect(await coordinate(a)).toBeGreaterThan(665);expect(await coordinate(a)).toBeLessThan(795);
   await a.keyboard.down('w');await expect.poll(()=>coordinate(a,'data-self-y'),{intervals:[25]}).toBeLessThan(400);await a.waitForTimeout(1200);await a.keyboard.up('w');expect(await coordinate(a,'data-self-y')).toBeGreaterThanOrEqual(370);expect(await coordinate(a,'data-self-y')).toBeLessThan(380);
+  expect(app.clocks).toBeGreaterThan(0);
   await aContext.close();await bContext.close();
+});
+
+test('legacy Presence keeps motion packets compatible with the existing strict-schema APK',async({browser})=>{
+  const app=fixture();app.paired();app.legacy();const ac=await browser.newContext(),bc=await browser.newContext();await app.install(ac,0);await app.install(bc,1);const a=await ac.newPage(),b=await bc.newPage();await login(a,0);await login(b,1);await expect(a.getByText('Connected',{exact:true})).toBeVisible();await expect(b.getByText('Connected',{exact:true})).toBeVisible();
+  await a.locator('canvas').click();await a.keyboard.down('d');await expect.poll(()=>coordinate(b,'data-partner-x')).toBeGreaterThan(620);await a.keyboard.up('d');await expect.poll(async()=>Math.abs(await coordinate(a)-await coordinate(b,'data-partner-x'))).toBeLessThan(12);expect(app.clocks).toBe(0);
+  await ac.close();await bc.close();
 });
 
 test('newest device takes control and logout wipes private IndexedDB cache',async({browser})=>{
