@@ -88,10 +88,10 @@ test('two sessions move, collide, stop idle traffic and reconnect at 150ms laten
   await a.locator('canvas').click();await a.keyboard.down('d');await expect.poll(()=>coordinate(b,'data-partner-x')).toBeGreaterThan(660);await a.keyboard.up('d');
   await expect.poll(async()=>Math.abs(await coordinate(a)-await coordinate(b,'data-partner-x'))).toBeLessThan(12);
   const stick=await b.getByRole('button',{name:'Move',exact:true}).boundingBox();const touch=await bContext.newCDPSession(b);const x=stick!.x+stick!.width/2,y=stick!.y+stick!.height/2;
-  await touch.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x,y}]});await touch.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:x+35,y}]});await expect.poll(()=>coordinate(a,'data-partner-x')).toBeGreaterThan(850);await touch.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+  await touch.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x,y}]});await touch.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:x+35,y}]});await expect.poll(()=>coordinate(b)).toBeGreaterThan(850);await expect.poll(()=>coordinate(a,'data-partner-x')).toBeGreaterThan(850);await touch.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
   await expect.poll(async()=>Math.abs(await coordinate(b)-await coordinate(a,'data-partner-x'))).toBeLessThan(12);
   const sent=await a.getByTestId('world').getAttribute('data-sent');await a.waitForTimeout(1500);expect(await a.getByTestId('world').getAttribute('data-sent')).toBe(sent);
-  await a.getByRole('button',{name:'Settings',exact:true}).click();await a.getByRole('button',{name:'Reconnect',exact:true}).click();await expect(a.getByText('Connected',{exact:true})).toBeVisible();await expect.poll(()=>coordinate(a,'data-partner-x')).toBeGreaterThan(850);
+  const stoppedB=await coordinate(b);await a.getByRole('button',{name:'Settings',exact:true}).click();await a.getByRole('button',{name:'Reconnect',exact:true}).click();await expect(a.getByText('Connected',{exact:true})).toBeVisible();await expect.poll(async()=>Math.abs(await coordinate(a,'data-partner-x')-stoppedB)).toBeLessThan(12);
   await a.keyboard.down('w');await expect.poll(()=>coordinate(a,'data-self-y')).toBeLessThan(400);await a.waitForTimeout(1200);await a.keyboard.up('w');expect(await coordinate(a,'data-self-y')).toBeGreaterThanOrEqual(370);
   await aContext.close();await bContext.close();
 });
@@ -114,6 +114,7 @@ test('invite link joins a partner already walking in a pending home',async({brow
 });
 
 test('simultaneous movement, both reconnect, background recovery, cached offline read-only',async({browser})=>{
+  test.setTimeout(90000); // Includes the SDK's real network-error retry backoff.
   const app=fixture();app.paired();const ac=await browser.newContext(),bc=await browser.newContext();await app.install(ac,0);await app.install(bc,1);const a=await ac.newPage(),b=await bc.newPage();await login(a,0);await login(b,1);await expect(a.getByText('Connected',{exact:true})).toBeVisible();await expect(b.getByText('Connected',{exact:true})).toBeVisible();await expect(a.locator('canvas')).toBeVisible();await expect(b.locator('canvas')).toBeVisible();
   await Promise.all([a.locator('canvas').click(),b.locator('canvas').click()]);await Promise.all([a.keyboard.down('a'),b.keyboard.down('d')]);await expect.poll(()=>coordinate(b,'data-partner-x')).toBeLessThan(540);await expect.poll(()=>coordinate(a,'data-partner-x')).toBeGreaterThan(830);await Promise.all([a.keyboard.up('a'),b.keyboard.up('d')]);
   const reconnect=async(page:Page)=>{await page.getByRole('button',{name:'Settings',exact:true}).click();await page.getByRole('button',{name:'Reconnect',exact:true}).click();};await Promise.all([reconnect(a),reconnect(b)]);await expect(a.getByText('Connected',{exact:true})).toBeVisible();await expect(b.getByText('Connected',{exact:true})).toBeVisible();

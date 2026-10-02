@@ -13,6 +13,7 @@ export class HouseRuntime {
   private snapshotValue: HouseSnapshot;
   private local: Motion;
   private joinedAt: string;
+  private timestampVerified = false;
   private remotes = new Map<string,Remote>();
   private sessions = new Map<string,HousePresence>();
   private listeners = new Set<(view:RuntimeView)=>void>();
@@ -91,6 +92,8 @@ export class HouseRuntime {
         if(this.disposed||generation!==this.generation)return;
         if(!next||next.couple_id!==this.snapshotValue.couple_id){this.onSnapshot(next);return;}
         this.snapshotValue=next;this.prepareRemotes();this.onSnapshot(next);
+        // Stamp a new device session once from a fresh RPC, never from cache.
+        if(!this.timestampVerified){this.joinedAt=new Date(next.server_time).toISOString();this.timestampVerified=true;this.takeover=false;}
         await this.transport.track(this.currentPresence());
         if(this.disposed||generation!==this.generation)return;
         this.applyPresence(this.transport.presence());
@@ -101,7 +104,7 @@ export class HouseRuntime {
           this.ready=true;
         }
         this.feedback='';this.notify();
-      }catch(error){if(!this.disposed){this.feedback=error instanceof Error?error.message:'Your home could not sync. Reconnect.';this.notify();}}
+      }catch(error){if(!this.disposed&&generation===this.generation){this.feedback=error instanceof Error?error.message:'Your home could not sync. Reconnect.';this.notify();}}
     })().finally(()=>{this.recovery=null;if(this.queuedRecovery&&!this.disposed&&this.connection==='connected'){this.queuedRecovery=false;void this.recover();}});
     return this.recovery;
   }
@@ -111,7 +114,7 @@ export class HouseRuntime {
     if(!next||this.disposed)return;
     const observed=this.remotes.get(this.local.user_id)?.point??this.local;
     this.local={...this.local,...clampPoint(observed),session_id:crypto.randomUUID(),seq:0,vx:0,vy:0,animation:'idle'};
-    this.joinedAt=new Date(next.server_time).toISOString();this.takeover=false;this.announced=false;
+    this.joinedAt=new Date(next.server_time).toISOString();this.timestampVerified=true;this.takeover=false;this.announced=false;
     await this.reconnect();
   }
   private async requestSync(){
