@@ -29,8 +29,10 @@ Private Broadcast/Presence authorization only for own couple. Typed player/sync 
 - Local: TypeScript passes; **30 unit tests** pass; **11 Chromium browser tests** pass, including retained six Phase 0 regressions. Account confirmation response, invalid invite, create/cancel/reload, invite links, pending-home partner join, desktop/mobile movement, collision, two-way synchronization at **150ms simulated Broadcast latency**, idle counts, reconnect/both reconnect, device takeover, logout cache wipe and cached read-only loading. Visibility recovery is a simulated Page Visibility event; it is not Android lifecycle proof.
 - Database CI: **65 pgTAP assertions** pass (17 foundation, 42 pairing, six private Presence/Broadcast checks); separate concurrent real transactions produce one invite winner, one INVALID_INVITE and exactly two members.
 - Hosted: **42 pairing + six Realtime authorization assertions** pass. Positive own-Presence/Broadcast controls succeed; cross-couple reads and publishes are denied.
-- Branch CI found a slow-frame mismatch/test timeout in the long movement case. Fixed local integration to use rawDelta. A later run passed ten browser cases but exposed a collision test that could walk past the table while polling a remote avatar; it now aligns and verifies the local position before checking the table edge. The corrected case passes locally; final CI is pending. Do not treat earlier failed web runs as complete verification.
-- Debug APK builds passed for pre-final client commits. Final APK, deployed web verification and actual web/phone walking/recovery remain pending. Phase 0 phone pings do not satisfy Phase 1 walking DoD.
+- Final [CI run 37042041741](https://github.com/jaxgun-uwu28/Couple-App/actions/runs/37042041741) passed web and database jobs for commit `3928fc2`: typecheck/build, 30 unit tests, all 11 browser tests, 65 pgTAP assertions and concurrent invite join. Earlier runs exposed a slow-frame mismatch and a collision test that could walk past the table while polling a remote avatar; integration uses rawDelta and the test verifies local alignment before checking the table edge.
+- Commit `3928fc2` fast-forwarded to main. Vercel production deployment `NtXH6fibxGUvrdupjjE4BVNDj7ok` is Ready. Existing signed-in live and local accounts open the backfilled room, both show Connected, and each sees the partner's initial position. Local hosted reconnection passes. No account password or membership change was needed.
+- Final [APK build 37042314663](https://github.com/jaxgun-uwu28/Couple-App/actions/runs/37042314663) passed for the same commit. Verified GitHub archive digest, APK v2 signature, package/version, SDK 24 minimum/36 target, sensorLandscape, backup off, App/Preferences plugins, bundled hosted URL/public key and rawDelta code. No `sb_secret_` key found. Local APK: ignored `artifacts/phase1/Paw-and-Us-phase1-3928fc2.apk`, SHA256 `c870dbe4eb3a620a7aa409526dfd3e40db924af5f0a3ae016fc08bf0f66ddcd8`. The automatic duplicate APK build of the identical main commit was cancelled after this artifact succeeded.
+- Actual web/phone walking and native recovery remain pending. User was given the replacement APK and asked to sign in, walk both devices, verify stopped positions/collision and reconnect. Phase 0 phone pings do not satisfy Phase 1 walking DoD.
 
 ## Known issues / pending evidence
 
@@ -38,7 +40,7 @@ User chose immediate signup without email verification for private testing; appl
 
 Hosted SQL was applied through the dashboard: CLI migration history must be reconciled before any future `db push`; do not replay migrations, reset or replace the hosted schema. Follow PHASE_1_SETUP.md.
 
-Final CI, final deployed web/APK smoke checks and user-observed two-device walking, reconnect and native background/foreground recovery are still required. No phase-done tag has been created.
+Final CI and deployed web/APK artifact smoke checks pass. User-observed two-device walking, reconnect and native background/foreground recovery are still required. No phase-done tag has been created.
 
 ## Next phase
 
