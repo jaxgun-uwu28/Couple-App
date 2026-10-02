@@ -1,0 +1,21 @@
+:root { font-family: ui-rounded, "Nunito", system-ui, sans-serif; color: #342e39; background: #f8f0f2; font-synthesis: none; }
+* { box-sizing: border-box; }
+body { margin: 0; }
+main { max-width: 1000px; margin: auto; padding: max(18px, env(safe-area-inset-top)) max(18px, env(safe-area-inset-right)) max(18px, env(safe-area-inset-bottom)) max(18px, env(safe-area-inset-left)); }
+h1 { margin-bottom: 0; } h2 { font-size: 1.25rem; }
+header p { margin-top: 6px; }
+.canvas { position: relative; width: 100%; aspect-ratio: 16 / 9; overflow: hidden; }
+.canvas canvas { display: block; }
+section { border: 1px solid #9bbbd0; border-radius: 16px; background: #fff9fa; padding: 20px; }
+form { display: flex; flex-wrap: wrap; align-items: end; gap: 12px; }
+label { display: grid; gap: 6px; flex: 1 1 240px; }
+input, button { font: inherit; min-height: 44px; border: 1px solid #796470; border-radius: 10px; padding: 10px 14px; }
+input { width: 100%; min-width: 0; background: white; color: #342e39; }
+button { cursor: pointer; color: #342e39; background: #dc96ae; }
+button:disabled { opacity: .55; cursor: default; }
+:focus-visible { outline: 3px solid #416c60; outline-offset: 3px; }
+.actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 18px; }
+.note { font-size: .9rem; }
+[role="alert"] { color: #a03b53; }
+li { overflow-wrap: anywhere; padding-block: 4px; }
+@media (max-width: 500px) { section { padding: 14px; } form button { width: 100%; } }

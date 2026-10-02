@@ -1,0 +1,1 @@
+-- Phase 0 has no game content. Never seed real account passwords or couple IDs.

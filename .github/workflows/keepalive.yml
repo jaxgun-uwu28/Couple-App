@@ -1,0 +1,26 @@
+name: Supabase health ping
+on:
+  schedule:
+    - cron: '17 3 */3 * *'
+  workflow_dispatch:
+permissions: {}
+jobs:
+  health:
+    if: ${{ vars.SUPABASE_URL != '' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Call public read-only health RPC
+        env:
+          PROJECT_URL: ${{ vars.SUPABASE_URL }}
+          PUBLIC_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          if [ -z "$PROJECT_URL" ] || [ -z "$PUBLIC_KEY" ]; then
+            echo "Configure SUPABASE_URL variable and public SUPABASE_ANON_KEY secret first."
+            exit 1
+          fi
+          curl --fail --silent --show-error --max-time 30 \
+            --request POST "$PROJECT_URL/rest/v1/rpc/health" \
+            --header "apikey: $PUBLIC_KEY" \
+            --header 'Content-Type: application/json' --data '{}' \
+            | python3 -c 'import json,sys; assert json.load(sys.stdin) == {"status":"ok"}'

@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Paw &amp; Us</string>
+    <string name="title_activity_main">Paw &amp; Us</string>
+    <string name="package_name">com.pawandus.app</string>
+    <string name="custom_url_scheme">com.pawandus.app</string>
+</resources>

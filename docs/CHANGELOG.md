@@ -1,4 +1,11 @@
 # CHANGELOG
 
 ## Unreleased
+- Approved remaining Phase 0 references; added the specified TypeScript/React/Vite/lazy Phaser hello-world, private manual Realtime transport, RLS membership migration and protocol, browser/unit/pgTAP checks, Vercel configuration, Capacitor Android debug shell and CI/keepalive workflows. Local type checks, 15 unit tests and four browser checks pass. Android build and CI verification are in progress. User deferred authenticated cloud access; no hosted migration, deployment or real web-to-APK messaging proof yet. Phase 0 remains incomplete; no completion tag or Phase 1 work.
 - Project started. Spec v1.4 added.
+- Phase 0 proposal review: inspected documentation-only repo, checked official free-tier pages, documented backend recommendation and A/B/C art/UI options. Design and infrastructure approval remain pending; no game or deployment built.
+- Phase 0 art direction approved: recorded all 18 user choices and coherence rules for top-down chibi art, mixed room layouts, Minimal Cute UI and Rose & Sky palette. Detailed mockups and infrastructure remain pending; no implementation started.
+- Phase 0 first detailed art reference: saved character/cat/dog pose studies, playful living-room composition and desktop/mobile HUD board with generation prompts and review notes. Revised camera toward overhead framing. First-set visual review pending; no game, deployment or schema changes.
+- User-directed Phase 0 HUD correction: landscape mobile gameplay, separate floating left-side icons, Chat show/hide, no top navigation strip and physical arcade Play access. Earlier portrait/top-toolbar reference superseded; gameplay remains unimplemented.
+- Revised landscape HUD accepted; retain separate left-side icons and physical arcade Play while continuing the remaining Phase 0 mockups.
+- Added connected-home and six contextual interaction reference studies, exact prompts, QA notes and coverage of all 18 required mockup subjects. Corrected opposing kitchen prep positions and removed invented shop prices. New references await review; no implementation or Phase 1 work.

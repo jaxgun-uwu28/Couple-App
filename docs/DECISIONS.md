@@ -3,12 +3,12 @@
 Log every architecture or scope decision here (date, decision, reason, alternatives). Propose changes here BEFORE implementing.
 
 ## Open decisions (from MASTER_SPEC Section 27)
-- [ ] 0  Existing repo stack: keep or migrate?
-- [ ] 0b Art direction (perspective, character, pet, house, UI, palette)
-- [ ] 0c Realtime backend: Supabase (default) vs Vercel WebSockets (only if free-tier gate passes)
-- [ ] 0d Local storage: IndexedDB only vs SQLite plugin
+- [x] 0  Existing repo stack: adopt prescribed stack in documentation-only repo
+- [x] 0b Art direction (perspective, character, pet, house, UI, palette)
+- [x] 0c Realtime backend: Supabase; Vercel WebSocket gate unproven
+- [x] 0d Local storage: IndexedDB only when caching is needed; no SQLite
 - [ ] 1  Email auth: disable confirmation vs free custom SMTP
-- [ ] 2  APK delivery: bundled assets vs remote-URL shell
+- [x] 2  APK delivery: bundled debug assets for Phase 0; signed release/update UX deferred
 - [ ] 3  Realtime budget fallback
 - [ ] 4  Shared wallet vs personal pockets
 - [ ] 5  Day/night: local time vs shared house time
@@ -19,4 +19,42 @@ Log every architecture or scope decision here (date, decision, reason, alternati
 - [ ] 10 Upgrade path if free limits are outgrown
 
 ## Decisions made
-(none yet)
+
+### 2026-10-02 — Approved references; Phase 0 infrastructure plan
+
+User's "looks good proceed" approves the remaining home/UI references and continuation within Phase 0, including step 16. This supersedes earlier scope deferrals. No gameplay, pairing flow, production HUD, movement, pet systems or Phase 1 features.
+
+- Adopt the specified pnpm / strict TypeScript / React + Vite / lazy Phaser 3 stack in this documentation-only repository. There is no existing application architecture to replace. Add libraries only when used: Zod and Supabase for the ping; defer router, Zustand and caches until needed.
+- Retain Supabase for private Realtime and Postgres authority; Vercel WebSocket gate is unproven. Keep SDK use behind the shared RealtimeTransport interface. IndexedDB remains the future read-through cache choice; no SQLite and no offline queue in the spike.
+- Minimal membership foundation: `couples`, `couple_members` with two constrained seats, one couple per user, RLS, no client writes, and a narrowly scoped `is_couple_member` helper. Provision test accounts/membership through administrative setup only; Phase 1 owns pairing RPCs. A public read-only `health` RPC exposes no couple data. Private Broadcast policies verify channel topic against membership; use existing RLS on Supabase-owned `realtime.messages`, do not alter its ownership or RLS setting.
+- Add only `spike_ping`, validated by Zod and manually sent with a 1/s client cap, bounded duplicate suppression and visible connection state. No game events or idle broadcasts. Payload identity remains peer-trusted within the authenticated couple; no authority or reward depends on it.
+- Test canvas and connection form are explicitly temporary Phase 0 diagnostics, not a replacement home/dashboard design. Responsive touch/keyboard access; no new major visual identity.
+- Capacitor 8 Android debug shell uses bundled web assets, matching web build and no remote `server.url`. Native landscape follows the user's correction. Remote shell and signed-release/update UX can be reconsidered in their phase. Local SDK 36 and Java 21 are present.
+- Add Vitest, Playwright desktop/mobile/two-context checks and pgTAP isolation/write-denial tests. CI uses free standard Linux runners; no larger runners or paid services. Keepalive is best effort, not a guarantee against pause. Cloud deployment, migration execution and actual web-to-APK ping must be verified before marking Phase 0 done.
+
+Files: root workspace/tooling; `apps/web` and generated Android; `packages/shared`; `supabase/migrations`, tests and config; `.github/workflows`; deployment config; protocol, setup and evidence docs. Account access is currently unavailable; prepare and test local artifacts while asking for the existing free project/account information. Never expose private keys.
+
+### 2026-10-02 — Landscape HUD accepted; continue Phase 0 mockups
+
+User accepted the revised HUD ("okay that is more like it"). Record horizontal gameplay, independent left-side icons, hidden/shown Chat and physical arcade Play as the accepted reference. Carry this and the selected art direction into remaining house/UI mockups under the existing Phase 0 continuation. Do not infer infrastructure or gameplay authorization; no Phase 1 work.
+
+### 2026-10-02 — User-directed landscape HUD revision
+
+User explicitly corrected the first reference: horizontal mobile gameplay, no top toolbar or enclosing HUD panel; Games accessed by approaching the physical arcade and pressing Play; Chat as a standalone left-side icon that shows/hides chat. Revise the visual reference and DESIGN.md accordingly. The user's correction supersedes the earlier portrait/top-HUD proposals without needing another direction-selection gate. Other approved art choices remain unchanged. This is Phase 0 design work only, not application or backend implementation.
+
+### 2026-10-02 — User-approved art direction
+
+User selected 1A, 2A, 3A, 4A, 5A, 6B, 7B, 8C, 9B, 10A, 11C, 12B, 13A, 14B, 15A, 16A, 17A, 18A. Record the complete approved direction in DESIGN.md. Alternatives remain archived; original agent recommendation is superseded. No architecture change, new feature or infrastructure approval inferred from these visual choices. Phase 0 remains incomplete pending detailed mockups and deferred validation.
+
+### 2026-10-02 — Phase 0 continuation: first detailed art set
+
+User authorized continuation. Create character/pet/sample-room/HUD reference first; retain approved art choices. Remaining rooms wait for concrete first-set review per MASTER_SPEC Section 0. This continuation adds reference art and documentation only; no backend, application or gameplay change. Infrastructure spike remains deferred under the original scope. No Phase 0 completion tag.
+
+## 2026-10-02 — Phase 0 recommendations (pending approval)
+
+- Repo: seven documentation files and Git metadata only. No frontend, backend, database, auth, dependencies, engine, assets, env files, scripts or deployment config to preserve or migrate.
+- Recommend prescribed TypeScript / React + Vite / Phaser 3 / Supabase / Vercel Hobby / Capacitor stack. Nothing installed. Isolate RealtimeTransport; use private couple channels, RLS + RPC and a read-through IndexedDB cache with idempotent action replay. SQLite is not justified by evidence yet.
+- Trust trade-off: avatar positions and host-simulated pet motion are peer-trusted and sanity-clamped. Persistent state, rewards and contested actions remain database-authoritative. No central game-loop server. Proposal only; no new contracts implemented.
+- Backend gate: official Vercel docs now describe Hobby WebSockets beta, but the complete no-card usage/recovery/add-on gate is unproven. Retain default Supabase; see FREE_TIER_NOTES.md. No Redis or transport switch.
+- Scope: user requested inspection, quota research and proposals, then a stop. Defer infrastructure spike and gameplay. Phase 0 remains incomplete; no done tag.
+- Art: choices were pending when proposals were presented; they are now recorded in the approval entry above. Detailed mockups remain pending.
