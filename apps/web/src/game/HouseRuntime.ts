@@ -1,15 +1,26 @@
 import { Capacitor } from '@capacitor/core';
-import { MotionBudget, RemoteMotion, clampPoint, facing, movePoint, preferredSessions, spawn, supportsMotionClock, velocity } from '@paw/shared';
-import type { ConnectionState, HousePresence, HouseSnapshot, Motion, MotionEvent, Point } from '@paw/shared';
+import { COTTAGE, WORLD, cottageSpawn, roomAt, MotionBudget, RemoteMotion, clampPoint, facing, movePoint, preferredSessions, spawn, supportsMotionClock, velocity } from '@paw/shared';
+import type { ConnectionState, HousePresence, HouseSnapshot, Motion, MotionEvent, Point, WorldState, CottageInteraction } from '@paw/shared';
 import type { HouseMessage, HouseRealtimeTransport } from '../infra/HouseTransport';
 import type { HouseApi } from '../infra/HouseApi';
 import { watchForeground } from '../infra/lifecycle';
 
 export type Actor = { id: string; name: string; seat: number; point: Point; direction: Motion['direction']; animation: Motion['animation']; online: boolean; away: boolean; local: boolean; lastSeen: number };
-export type RuntimeView = { connection: ConnectionState; ready: boolean; message: string; takenOver: boolean; active: boolean; sent: number; received: number; actors: Actor[] };
+export type RuntimeView = { connection: ConnectionState; ready: boolean; message: string; takenOver: boolean; active: boolean; sent: number; received: number; actors: Actor[]; world: WorldState|null; sessionId:string; interacting:boolean };
 type Remote = { motion: RemoteMotion; point: Point; offlineSince: number | null; online: boolean; away: boolean; lastSeen: number };
 
 export class HouseRuntime {
+  private worldValue:WorldState|null=null;
+  private worldRead:Promise<void>|null=null;
+  private interactionBusy=false;
+  private lastRenew=0;
+  private worldOffset=0;
+  private refreshTimer:ReturnType<typeof setTimeout>|null=null;
+  private seenWorld=new Set<string>();
+  private lastWorldHint=-Infinity;
+  get cottage() { return this.snapshotValue.house.map_id === 'cottage-v1'; }
+  get geometry() { return this.cottage ? COTTAGE : WORLD; }
+  private spawnPoint(seat: number) { return this.cottage ? cottageSpawn(seat) : spawn(seat); }
   private snapshotValue: HouseSnapshot;
   private local: Motion;
   private joinedAt: string;
@@ -37,20 +48,20 @@ export class HouseRuntime {
   private announced = false;
   private queuedRecovery = false;
   private lastUnknownRefresh = -Infinity;
-  constructor(private transport:HouseRealtimeTransport,private api:Pick<HouseApi,'snapshot'>,snapshot:HouseSnapshot,private onSnapshot:(snapshot:HouseSnapshot|null)=>void) {
+  constructor(private transport:HouseRealtimeTransport,private api:Pick<HouseApi,'snapshot'> & Partial<Pick<HouseApi,'world'|'interact'>>,snapshot:HouseSnapshot,private onSnapshot:(snapshot:HouseSnapshot|null)=>void) {
     this.snapshotValue=snapshot;
     const member=snapshot.members.find(item=>item.user_id===snapshot.user_id)!;
-    this.local={user_id:member.user_id,couple_id:snapshot.couple_id,session_id:crypto.randomUUID(),seq:0,...spawn(member.seat),vx:0,vy:0,direction:'down',animation:'idle',room:'phase1-room'};
+    this.local={user_id:member.user_id,couple_id:snapshot.couple_id,session_id:crypto.randomUUID(),seq:0,...this.spawnPoint(member.seat),vx:0,vy:0,direction:'down',animation:'idle',room:this.cottage?'hall':'phase1-room'};
     this.joinedAt=new Date(snapshot.server_time).toISOString();
     this.budget.reset(this.local,performance.now());
     this.prepareRemotes();
   }
   private prepareRemotes() {
-    for(const member of this.snapshotValue.members) if(!this.remotes.has(member.user_id))this.remotes.set(member.user_id,{motion:new RemoteMotion(spawn(member.seat)),point:spawn(member.seat),offlineSince:performance.now(),online:false,away:false,lastSeen:Date.now()});
+    for(const member of this.snapshotValue.members) if(!this.remotes.has(member.user_id))this.remotes.set(member.user_id,{motion:new RemoteMotion(this.spawnPoint(member.seat),this.geometry),point:this.spawnPoint(member.seat),offlineSince:performance.now(),online:false,away:false,lastSeen:Date.now()});
     for(const id of this.remotes.keys())if(!this.snapshotValue.members.some(member=>member.user_id===id))this.remotes.delete(id);
   }
   private currentPresence(): HousePresence {
-    return {user_id:this.local.user_id,session_id:this.local.session_id,joined_at:this.joinedAt,room:'phase1-room',status:this.active&&!this.takeover?'online':'away',device:Capacitor.isNativePlatform()?'android':'web',app_version:'phase1',motion_clock:1};
+    return {user_id:this.local.user_id,session_id:this.local.session_id,joined_at:this.joinedAt,room:this.local.room,status:this.active&&!this.takeover?'online':'away',device:Capacitor.isNativePlatform()?'android':'web',app_version:this.cottage?'phase2':'phase1',motion_clock:1};
   }
   private notify(){if(!this.disposed)this.listeners.forEach(listener=>listener(this.view()));}
   onView(listener:(view:RuntimeView)=>void){this.listeners.add(listener);listener(this.view());return()=>{this.listeners.delete(listener);};}
@@ -64,7 +75,8 @@ export class HouseRuntime {
       const frame=self&&!this.takeover?this.local:remote.motion.displayFrame;
       actors.push({id:member.user_id,name:self?'You':member.display_name,seat:member.seat,point:self&&!this.takeover?{x:this.local.x,y:this.local.y}:remote.point,direction:frame?.direction??'down',animation:frame?.animation??'idle',online:self&&!this.takeover?this.ready&&this.connection==='connected':remote.online,away:self?(!this.active||this.takeover):remote.away,local:self,lastSeen:self&&this.active?Date.now():remote.lastSeen});
     }
-    return {connection:this.connection,ready:this.ready,message:this.feedback,takenOver:this.takeover,active:this.active,sent:this.sent,received:this.received,actors};
+    const world=this.worldValue?{...this.worldValue,slots:this.worldValue.slots.filter(slot=>Date.parse(slot.expires_at)>Date.now()+this.worldOffset)}:null;
+    return {connection:this.connection,ready:this.ready,message:this.feedback,takenOver:this.takeover,active:this.active,sent:this.sent,received:this.received,actors,world,sessionId:this.local.session_id,interacting:this.interactionBusy};
   }
   async start(){
     this.cleanup.push(this.transport.onState(state=>{
@@ -74,7 +86,7 @@ export class HouseRuntime {
       if(state==='connected'){if(this.recovery)this.queuedRecovery=true;void this.recover();}
     }),this.transport.onMessage(message=>this.receive(message)),this.transport.onPresence(values=>this.applyPresence(values)),watchForeground(active=>{
       if(this.active===active)return;this.active=active;this.generation++;this.stopMotion();this.queuedRecovery=active;
-      if(!active){this.ready=false;void this.transport.track(this.currentPresence()).catch(()=>undefined);}
+      if(!active){this.ready=false;void this.cancelInteraction().catch(()=>undefined);void this.transport.track(this.currentPresence()).catch(()=>undefined);}
       else if(this.connection==='connected')void this.recover();
       else void this.reconnect();
       this.notify();
@@ -93,6 +105,7 @@ export class HouseRuntime {
         if(this.disposed||generation!==this.generation)return;
         if(!next||next.couple_id!==this.snapshotValue.couple_id){this.onSnapshot(next);return;}
         this.snapshotValue=next;this.prepareRemotes();this.onSnapshot(next);
+        if(this.cottage)await this.refreshWorld();
         // Stamp a new device session once from a fresh RPC, never from cache.
         if(!this.timestampVerified){this.joinedAt=new Date(next.server_time).toISOString();this.timestampVerified=true;this.takeover=false;}
         await this.transport.track(this.currentPresence());
@@ -114,7 +127,7 @@ export class HouseRuntime {
     const next=await this.api.snapshot(this.snapshotValue);
     if(!next||this.disposed)return;
     const observed=this.remotes.get(this.local.user_id)?.point??this.local;
-    this.local={...this.local,...clampPoint(observed),session_id:crypto.randomUUID(),seq:0,vx:0,vy:0,animation:'idle'};
+    this.local={...this.local,...clampPoint(observed,this.geometry),session_id:crypto.randomUUID(),seq:0,vx:0,vy:0,animation:'idle'};
     this.joinedAt=new Date(next.server_time).toISOString();this.timestampVerified=true;this.takeover=false;this.announced=false;
     await this.reconnect();
   }
@@ -148,6 +161,14 @@ export class HouseRuntime {
   }
   private receive(message:HouseMessage){
     if(this.disposed)return;
+    if(message.event==='object_changed'){
+      const p=message.payload;
+      if(!this.cottage||p.couple_id!==this.snapshotValue.couple_id||this.sessions.get(p.user_id)?.session_id!==p.session_id||this.seenWorld.has(p.request_id)||!this.active)return;
+      this.seenWorld.add(p.request_id);if(this.seenWorld.size>128)this.seenWorld.delete(this.seenWorld.values().next().value!);
+      const delay=Math.max(0,500-(performance.now()-this.lastWorldHint));
+      if(this.refreshTimer===null)this.refreshTimer=setTimeout(()=>{this.refreshTimer=null;this.lastWorldHint=performance.now();void this.refreshWorld().catch(()=>{this.feedback='House objects could not sync. Reconnect.';this.notify();});},delay);
+      return;
+    }
     if(message.event==='sync_request'){
       const request=message.payload;
       if(!this.snapshotValue.members.some(member=>member.user_id===request.user_id)||request.session_id===this.local.session_id||!this.active||this.takeover)return;
@@ -183,15 +204,46 @@ export class HouseRuntime {
   private async send(message:HouseMessage){if(this.disposed)return;await this.transport.send(message);this.sent++;}
   private sendMotion(event:MotionEvent){return this.send({event,payload:this.packet()});}
   private stopMotion(){this.local={...this.local,vx:0,vy:0,animation:'idle'};}
+  private async refreshWorld():Promise<void>{
+    if(this.worldRead)return this.worldRead;
+    this.worldRead=(async()=>{if(!this.api.world)throw new Error('House object API unavailable.');const state=await this.api.world(this.snapshotValue.couple_id);if(this.disposed)return;this.worldOffset=Date.parse(state.server_time)-Date.now();this.worldValue=state;this.notify();})().finally(()=>{this.worldRead=null;});
+    return this.worldRead;
+  }
+  private ownSlot(){return this.view().world?.slots.find(s=>s.user_id===this.local.user_id&&s.session_id===this.local.session_id);}
+  async interact(target:CottageInteraction){
+    if(!this.cottage||!this.ready||!this.active||this.takeover||!this.api.interact)throw new Error('Reconnect before interacting.');
+    if(this.interactionBusy)return;
+    if(this.ownSlot()){await this.cancelInteraction();return;}
+    this.interactionBusy=true;this.stopMotion();this.notify();
+    try{await this.refreshWorld();const occupied=this.view().world?.slots??[];const slot=target.slots.find(s=>!occupied.some(o=>o.object_id===target.id&&o.slot_id===s.id));if(target.slots.length&&!slot)throw new Error('That spot is busy. Try again when it is free.');await this.api.interact(target.slots.length?'start':'toggle',target.id,slot?.id??null,this.local.session_id,this.local);await this.refreshWorld();this.lastRenew=performance.now();await this.worldChanged();}
+    finally{this.interactionBusy=false;this.notify();}
+  }
+  async cancelInteraction(){
+    if(!this.cottage||!this.ownSlot()||!this.api.interact||this.interactionBusy)return;
+    this.interactionBusy=true;this.notify();
+    try{await this.api.interact('cancel',null,null,this.local.session_id,this.local);await this.refreshWorld();await this.worldChanged();}
+    finally{this.interactionBusy=false;this.notify();}
+  }
+  private async worldChanged(){if(this.connection==='connected'&&!this.disposed)await this.send({event:'object_changed',payload:{couple_id:this.local.couple_id,user_id:this.local.user_id,session_id:this.local.session_id,request_id:crypto.randomUUID()}});}
   tick(input:Point,dt:number,now:number){
     if(this.disposed)return;
     for(const remote of this.remotes.values())remote.point=remote.motion.sample(now,dt);
     if(this.ready&&this.active&&!this.takeover&&this.connection==='connected'){
-      const previous={...this.local};const v=velocity(input);const point=movePoint(this.local,v,dt);
+      const activity=this.ownSlot();
+      if(activity){
+        if(Math.hypot(input.x,input.y)>.15)void this.cancelInteraction().catch(error=>{this.feedback=error.message;this.notify();});
+        else if(!this.interactionBusy&&now-this.lastRenew>=30000&&this.api.interact){this.lastRenew=now;void this.api.interact('renew',activity.object_id,activity.slot_id,this.local.session_id,this.local).then(()=>this.refreshWorld()).catch(()=>{this.feedback='Your activity could not reconnect. Leave and try again.';this.notify();});}
+        input={x:0,y:0};
+      }
+      if(this.interactionBusy)input={x:0,y:0};
+      const previous={...this.local};let v=velocity(input,this.geometry);
+      // Soft-pass rather than letting a partner block a narrow doorway.
+      if(this.cottage&&Array.from(this.remotes.values()).some(r=>r.online&&!r.away&&Math.hypot(r.point.x-this.local.x,r.point.y-this.local.y)<28))v={x:v.x*.6,y:v.y*.6};
+      const point=movePoint(this.local,v,dt,this.geometry);
       const moving=Math.hypot(point.x-this.local.x,point.y-this.local.y)>.01;
-      this.local={...this.local,...point,vx:moving?v.x:0,vy:moving?v.y:0,direction:facing(v,this.local.direction),animation:moving?'walk':'idle'};
+      this.local={...this.local,...point,vx:moving?v.x:0,vy:moving?v.y:0,direction:facing(v,this.local.direction),animation:moving?'walk':'idle',room:this.cottage?roomAt(point) as Motion['room']:'phase1-room'};
       if(this.budget.claim(this.local,now)){
-        const event:MotionEvent=this.local.animation==='idle'?'PLAYER_STOPPED':previous.animation!==this.local.animation?'PLAYER_ANIMATION_CHANGED':'PLAYER_MOVED';
+        const event:MotionEvent=previous.room!==this.local.room?'PLAYER_ROOM_CHANGED':this.local.animation==='idle'?'PLAYER_STOPPED':previous.animation!==this.local.animation?'PLAYER_ANIMATION_CHANGED':'PLAYER_MOVED';
         void this.sendMotion(event).catch(error=>{if(!this.disposed){this.ready=false;this.feedback=error instanceof Error?error.message:'Connection interrupted.';this.notify();}});
       }
     }
@@ -201,6 +253,8 @@ export class HouseRuntime {
     if(this.disposed)return;
     const leave=this.ready&&this.active&&!this.takeover&&this.connection==='connected'?this.packet():null;
     this.disposed=true;this.generation++;this.ready=false;this.cleanup.splice(0).forEach(stop=>stop());this.listeners.clear();
+    if(this.refreshTimer!==null)clearTimeout(this.refreshTimer);
+    if(this.cottage&&this.api.interact)void this.api.interact('cancel',null,null,this.local.session_id,this.local).catch(()=>undefined);
     if(leave)void this.transport.send({event:'PLAYER_LEFT',payload:leave}).catch(()=>undefined);
     await this.transport.disconnect();
   }

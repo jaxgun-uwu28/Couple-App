@@ -27,7 +27,7 @@ export async function saveSettings(value: Settings): Promise<void> {
   } catch { /* Settings still work for this session when storage is unavailable. */ }
 }
 
-type CacheRow = { key: string; userId: string; schema: 1; snapshot: HouseSnapshot };
+type CacheRow = { key: string; userId: string; schema: 2; snapshot: HouseSnapshot };
 export class SnapshotCache {
   private activeUser: string | null = null;
   private epoch = 0;
@@ -82,7 +82,7 @@ export class SnapshotCache {
           const request = database.transaction('snapshots').objectStore('snapshots').index('userId').getAll(userId);
           request.onsuccess = () => resolve(request.result as CacheRow[]); request.onerror = () => reject(request.error);
         });
-        const row = rows.find(value => value.schema === 1 && value.key === `${userId}:${value.snapshot.couple_id}:1`);
+        const row = rows.find(value => value.schema === 2 && value.key === `${userId}:${value.snapshot.couple_id}:2`);
         const parsed = fullSnapshotSchema.safeParse(row?.snapshot);
         if (this.activeUser === userId && epoch === this.epoch && parsed.success && parsed.data.user_id === userId) { this.memory = parsed.data; return parsed.data; }
       } catch { /* Fall back to this account's in-memory read-through copy. */ }
@@ -98,7 +98,7 @@ export class SnapshotCache {
         if (this.activeUser !== snapshot.user_id || epoch !== this.epoch) return;
         await new Promise<void>((resolve, reject) => {
           const tx = database.transaction('snapshots','readwrite'); const store = tx.objectStore('snapshots');
-          store.clear(); store.put({ key: `${snapshot.user_id}:${snapshot.couple_id}:1`, userId: snapshot.user_id, schema: 1, snapshot } satisfies CacheRow);
+          store.clear(); store.put({ key: `${snapshot.user_id}:${snapshot.couple_id}:2`, userId: snapshot.user_id, schema: 2, snapshot } satisfies CacheRow);
           tx.oncomplete = () => resolve(); tx.onerror = () => reject(tx.error);
         });
       } catch { /* Never stop play or authorize from cache on storage failure. */ }

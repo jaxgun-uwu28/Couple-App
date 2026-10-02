@@ -46,3 +46,4 @@ export class PingWindow {
     return true;
   }
 }
+export * from './cottage';

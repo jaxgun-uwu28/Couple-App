@@ -1,0 +1,47 @@
+begin;
+select plan(28);
+insert into auth.users(id,email,raw_user_meta_data) values
+('21000000-0000-4000-8000-000000000001','phase2-a@example.invalid','{}'),
+('21000000-0000-4000-8000-000000000002','phase2-b@example.invalid','{}'),
+('21000000-0000-4000-8000-000000000003','phase2-c@example.invalid','{}');
+create temporary table world_results(label text primary key,value jsonb);grant all on world_results to authenticated;
+set local role authenticated;
+set local request.jwt.claims='{"sub":"21000000-0000-4000-8000-000000000001","role":"authenticated"}';
+select throws_ok($$select public.get_house_world()$$,'42501',null,'Unpaired caller has no world');
+insert into world_results values('create',public.create_couple('22000000-0000-4000-8000-000000000001'));
+insert into world_results values('snapshot',public.get_house_snapshot());
+select is(public.get_house_snapshot_v2()->'house'->>'map_id','cottage-v1','V2 selects production map');
+select is(public.get_house_snapshot()->'house'->>'map_id','phase1-room','Old RPC retains old geometry');
+select is(jsonb_array_length(public.get_house_world()->'slots'),0,'World starts empty');
+select throws_ok($$insert into public.house_object_slots values(gen_random_uuid(),'sofa','0',auth.uid(),gen_random_uuid(),now())$$,'42501',null,'Direct slot writes denied');
+select throws_ok($$insert into public.house_object_states values(gen_random_uuid(),'fridge',true)$$,'42501',null,'Direct toggle writes denied');
+select throws_ok($$update public.house_object_catalog set radius=128$$,'42501',null,'Client cannot change catalog');
+select is(public.house_interact('start','sofa','0','23000000-0000-4000-8000-000000000001',0,0,'24000000-0000-4000-8000-000000000001')->>'code','OUT_OF_RANGE','Distant claim refused');
+select is(public.house_interact('start','sofa','0','23000000-0000-4000-8000-000000000001','NaN'::float8,1200,'24000000-0000-4000-8000-000000000002')->>'code','OUT_OF_RANGE','Nonfinite position refused');
+select is(public.house_interact('start','sofa','9','23000000-0000-4000-8000-000000000001',256,1200,'24000000-0000-4000-8000-000000000003')->>'code','INVALID_SLOT','Unknown slot refused');
+insert into world_results values('start',public.house_interact('start','sofa','0','23000000-0000-4000-8000-000000000001',256,1200,'24000000-0000-4000-8000-000000000004'));
+select is((select value->>'ok' from world_results where label='start'),'true','Own slot claim succeeds');
+select is(public.house_interact('start','sofa','0','23000000-0000-4000-8000-000000000001',256,1200,'24000000-0000-4000-8000-000000000004'),(select value from world_results where label='start'),'Duplicate claim is idempotent');
+select is(public.house_interact('start','sofa','1','23000000-0000-4000-8000-000000000001',256,1200,'24000000-0000-4000-8000-000000000004')->>'code','REQUEST_CONFLICT','Key cannot change slot');
+select is(public.house_interact('start','sofa','1','23000000-0000-4000-8000-000000000001',256,1200,'24000000-0000-4000-8000-000000000005')->>'code','ALREADY_USING','One activity per player');
+set local request.jwt.claims='{"sub":"21000000-0000-4000-8000-000000000002","role":"authenticated"}';
+select is(public.join_couple((select value->'invite'->>'code' from world_results where label='snapshot'),'22000000-0000-4000-8000-000000000002')->>'ok','true','Partner joins');
+select is(public.house_interact('start','sofa','0','23000000-0000-4000-8000-000000000002',256,1200,'24000000-0000-4000-8000-000000000006')->>'code','BUSY','Partner cannot occupy taken slot');
+select is(public.house_interact('start','sofa','1','23000000-0000-4000-8000-000000000002',256,1200,'24000000-0000-4000-8000-000000000007')->>'ok','true','Partner uses second slot');
+select is(public.house_interact('renew','sofa','0','23000000-0000-4000-8000-000000000002',256,1200,'24000000-0000-4000-8000-000000000008')->>'code','NOT_OWNER','Partner cannot renew another slot');
+select is(public.house_interact('cancel',null,null,'23000000-0000-4000-8000-000000000001',256,1200,'24000000-0000-4000-8000-000000000009')->>'ok','true','Cancellation is safe for stale session');
+select is(jsonb_array_length(public.get_house_world()->'slots'),2,'Stale cancellation cannot erase occupants');
+insert into world_results values('toggle',public.house_interact('toggle','fridge',null,'23000000-0000-4000-8000-000000000002',144,256,'24000000-0000-4000-8000-000000000010'));
+select is((select value->>'ok' from world_results where label='toggle'),'true','Fridge toggle succeeds');
+select is(public.house_interact('toggle','fridge',null,'23000000-0000-4000-8000-000000000002',144,256,'24000000-0000-4000-8000-000000000010'),(select value from world_results where label='toggle'),'Duplicate toggle cannot flip twice');
+select is(public.get_house_world()->'states'->0->>'enabled','true','Authoritative toggle state persists');
+select is(public.house_interact('toggle','arcade',null,'23000000-0000-4000-8000-000000000002',624,992,'24000000-0000-4000-8000-000000000011')->>'code','UNAVAILABLE','Future game system is not built');
+set local request.jwt.claims='{"sub":"21000000-0000-4000-8000-000000000003","role":"authenticated"}';
+select is((select count(*)::integer from public.house_object_slots),0,'Outsider cannot read slots');
+select is((select count(*)::integer from public.house_object_states),0,'Outsider cannot read toggles');
+reset role;
+update public.house_object_slots set expires_at=now()-interval '1 second' where user_id='21000000-0000-4000-8000-000000000001';
+set local role authenticated;set local request.jwt.claims='{"sub":"21000000-0000-4000-8000-000000000002","role":"authenticated"}';
+select is(jsonb_array_length(public.get_house_world()->'slots'),1,'Expired disconnected slot hidden');
+select is(public.house_interact('cancel',null,null,'23000000-0000-4000-8000-000000000002',256,1200,'24000000-0000-4000-8000-000000000012')->>'ok','true','Own cancel succeeds');
+select * from finish();rollback;

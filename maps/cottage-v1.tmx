@@ -1,0 +1,712 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.10" tiledversion="1.12.2" orientation="orthogonal" renderorder="right-down" width="64" height="44" tilewidth="32" tileheight="32" infinite="0" nextlayerid="11" nextobjectid="133">
+ <properties>
+  <property name="approved_spacing" value="A"/>
+  <property name="door_clear_tiles" type="int" value="3"/>
+  <property name="hall_clear_tiles" type="int" value="4"/>
+  <property name="layout_version" type="int" value="2"/>
+  <property name="map_id" value="cottage-v1"/>
+ </properties>
+ <tileset firstgid="1" name="navigation" tilewidth="32" tileheight="32" tilecount="1" columns="1">
+  <grid orientation="orthogonal" width="0" height="0"/>
+  <image source="navigation.png" width="32" height="32"/>
+ </tileset>
+ <objectgroup id="1" name="Rooms">
+  <object id="1" name="kitchen" type="room" x="32" y="32" width="896" height="672">
+   <properties>
+    <property name="label" value="Kitchen"/>
+   </properties>
+  </object>
+  <object id="2" name="bedroom" type="room" x="1120" y="32" width="896" height="672">
+   <properties>
+    <property name="label" value="Bedroom"/>
+   </properties>
+  </object>
+  <object id="3" name="living" type="room" x="32" y="736" width="896" height="640">
+   <properties>
+    <property name="label" value="Living Room"/>
+   </properties>
+  </object>
+  <object id="4" name="bathroom" type="room" x="1120" y="736" width="896" height="640">
+   <properties>
+    <property name="label" value="Bathroom"/>
+   </properties>
+  </object>
+  <object id="5" name="hall" type="room" x="960" y="32" width="128" height="1344">
+   <properties>
+    <property name="label" value="Hall"/>
+   </properties>
+  </object>
+ </objectgroup>
+ <objectgroup id="2" name="Walls">
+  <object id="6" name="north" type="wall" x="0" y="0" width="2048" height="32"/>
+  <object id="8" name="south" type="wall" x="0" y="1376" width="2048" height="32"/>
+  <object id="10" name="west" type="wall" x="0" y="32" width="32" height="1344"/>
+  <object id="12" name="east" type="wall" x="2016" y="32" width="32" height="1344"/>
+  <object id="14" name="hall-29-a" type="wall" x="928" y="32" width="32" height="256"/>
+  <object id="16" name="hall-29-b" type="wall" x="928" y="384" width="32" height="544"/>
+  <object id="18" name="hall-29-c" type="wall" x="928" y="1024" width="32" height="352"/>
+  <object id="20" name="hall-34-a" type="wall" x="1088" y="32" width="32" height="256"/>
+  <object id="22" name="hall-34-b" type="wall" x="1088" y="384" width="32" height="544"/>
+  <object id="24" name="hall-34-c" type="wall" x="1088" y="1024" width="32" height="352"/>
+  <object id="26" name="left-middle-a" type="wall" x="32" y="704" width="320" height="32"/>
+  <object id="28" name="left-middle-b" type="wall" x="448" y="704" width="480" height="32"/>
+  <object id="30" name="right-middle-a" type="wall" x="1120" y="704" width="384" height="32"/>
+  <object id="32" name="right-middle-b" type="wall" x="1600" y="704" width="416" height="32"/>
+ </objectgroup>
+ <objectgroup id="3" name="Doors">
+  <object id="34" name="door-0" type="door" x="928" y="288" width="32" height="96">
+   <properties>
+    <property name="clear_tiles" type="int" value="3"/>
+    <property name="proximity_px" type="int" value="112"/>
+   </properties>
+  </object>
+  <object id="35" name="door-1" type="door" x="1088" y="288" width="32" height="96">
+   <properties>
+    <property name="clear_tiles" type="int" value="3"/>
+    <property name="proximity_px" type="int" value="112"/>
+   </properties>
+  </object>
+  <object id="36" name="door-2" type="door" x="928" y="928" width="32" height="96">
+   <properties>
+    <property name="clear_tiles" type="int" value="3"/>
+    <property name="proximity_px" type="int" value="112"/>
+   </properties>
+  </object>
+  <object id="37" name="door-3" type="door" x="1088" y="928" width="32" height="96">
+   <properties>
+    <property name="clear_tiles" type="int" value="3"/>
+    <property name="proximity_px" type="int" value="112"/>
+   </properties>
+  </object>
+  <object id="38" name="door-4" type="door" x="352" y="704" width="96" height="32">
+   <properties>
+    <property name="clear_tiles" type="int" value="3"/>
+    <property name="proximity_px" type="int" value="112"/>
+   </properties>
+  </object>
+  <object id="39" name="door-5" type="door" x="1504" y="704" width="96" height="32">
+   <properties>
+    <property name="clear_tiles" type="int" value="3"/>
+    <property name="proximity_px" type="int" value="112"/>
+   </properties>
+  </object>
+ </objectgroup>
+ <objectgroup id="4" name="Furniture">
+  <object id="40" name="fridge" type="fridge" x="96" y="96" width="96" height="128">
+   <properties>
+    <property name="interaction" value="Open"/>
+    <property name="mode" value="solo"/>
+    <property name="room_id" value="kitchen"/>
+    <property name="slots" type="int" value="0"/>
+   </properties>
+  </object>
+  <object id="43" name="stove" type="stove" x="256" y="96" width="96" height="96">
+   <properties>
+    <property name="interaction" value="Cook"/>
+    <property name="mode" value="solo"/>
+    <property name="room_id" value="kitchen"/>
+    <property name="slots" type="int" value="0"/>
+   </properties>
+  </object>
+  <object id="46" name="kitchen-sink" type="sink" x="416" y="96" width="96" height="96">
+   <properties>
+    <property name="interaction" value="Clean"/>
+    <property name="mode" value="solo"/>
+    <property name="room_id" value="kitchen"/>
+    <property name="slots" type="int" value="0"/>
+   </properties>
+  </object>
+  <object id="49" name="counter" type="counter" x="576" y="96" width="160" height="64">
+   <properties>
+    <property name="interaction" value=""/>
+    <property name="mode" value="solo"/>
+    <property name="room_id" value="kitchen"/>
+    <property name="slots" type="int" value="0"/>
+   </properties>
+  </object>
+  <object id="51" name="island" type="island" x="256" y="320" width="224" height="128">
+   <properties>
+    <property name="interaction" value="Cook"/>
+    <property name="mode" value="either"/>
+    <property name="room_id" value="kitchen"/>
+    <property name="slots" type="int" value="2"/>
+   </properties>
+  </object>
+  <object id="56" name="dining" type="dining" x="608" y="320" width="128" height="160">
+   <properties>
+    <property name="interaction" value="Sit"/>
+    <property name="mode" value="either"/>
+    <property name="room_id" value="kitchen"/>
+    <property name="slots" type="int" value="2"/>
+   </properties>
+  </object>
+  <object id="61" name="trash" type="trash" x="96" y="544" width="48" height="64">
+   <properties>
+    <property name="interaction" value="Clean"/>
+    <property name="mode" value="solo"/>
+    <property name="room_id" value="kitchen"/>
+    <property name="slots" type="int" value="0"/>
+   </properties>
+  </object>
+  <object id="64" name="sofa" type="sofa" x="128" y="1056" width="256" height="96">
+   <properties>
+    <property name="interaction" value="Sit"/>
+    <property name="mode" value="either"/>
+    <property name="room_id" value="living"/>
+    <property name="slots" type="int" value="2"/>
+   </properties>
+  </object>
+  <object id="69" name="tv" type="tv" x="128" y="768" width="256" height="32">
+   <properties>
+    <property name="interaction" value="Open"/>
+    <property name="mode" value="solo"/>
+    <property name="room_id" value="living"/>
+    <property name="slots" type="int" value="0"/>
+   </properties>
+  </object>
+  <object id="72" name="coffee-table" type="coffee-table" x="160" y="928" width="192" height="96">
+   <properties>
+    <property name="interaction" value=""/>
+    <property name="mode" value="solo"/>
+    <property name="room_id" value="living"/>
+    <property name="slots" type="int" value="0"/>
+   </properties>
+  </object>
+  <object id="74" name="arcade" type="arcade" x="576" y="832" width="96" height="128">
+   <properties>
+    <property name="interaction" value="Play"/>
+    <property name="mode" value="solo"/>
+    <property name="room_id" value="living"/>
+    <property name="slots" type="int" value="0"/>
+   </properties>
+  </object>
+  <object id="77" name="arcade-stool-a" type="stool" x="576" y="1056" width="48" height="48">
+   <properties>
+    <property name="interaction" value=""/>
+    <property name="mode" value="solo"/>
+    <property name="room_id" value="living"/>
+    <property name="slots" type="int" value="0"/>
+   </properties>
+  </object>
+  <object id="79" name="arcade-stool-b" type="stool" x="672" y="1056" width="48" height="48">
+   <properties>
+    <property name="interaction" value=""/>
+    <property name="mode" value="solo"/>
+    <property name="room_id" value="living"/>
+    <property name="slots" type="int" value="0"/>
+   </properties>
+  </object>
+  <object id="81" name="living-shelf" type="shelf" x="736" y="1152" width="64" height="128">
+   <properties>
+    <property name="interaction" value=""/>
+    <property name="mode" value="solo"/>
+    <property name="room_id" value="living"/>
+    <property name="slots" type="int" value="0"/>
+   </properties>
+  </object>
+  <object id="83" name="plant" type="plant" x="96" y="1248" width="64" height="64">
+   <properties>
+    <property name="interaction" value=""/>
+    <property name="mode" value="solo"/>
+    <property name="room_id" value="living"/>
+    <property name="slots" type="int" value="0"/>
+   </properties>
+  </object>
+  <object id="85" name="bed" type="bed" x="1408" y="192" width="224" height="224">
+   <properties>
+    <property name="interaction" value="Sleep"/>
+    <property name="mode" value="either"/>
+    <property name="room_id" value="bedroom"/>
+    <property name="slots" type="int" value="2"/>
+   </properties>
+  </object>
+  <object id="90" name="wardrobe" type="wardrobe" x="1760" y="96" width="64" height="224">
+   <properties>
+    <property name="interaction" value="Change Clothes"/>
+    <property name="mode" value="solo"/>
+    <property name="room_id" value="bedroom"/>
+    <property name="slots" type="int" value="0"/>
+   </properties>
+  </object>
+  <object id="93" name="bookshelf" type="bookshelf" x="1184" y="96" width="128" height="48">
+   <properties>
+    <property name="interaction" value=""/>
+    <property name="mode" value="solo"/>
+    <property name="room_id" value="bedroom"/>
+    <property name="slots" type="int" value="0"/>
+   </properties>
+  </object>
+  <object id="95" name="bedroom-lamp" type="lamp" x="1280" y="192" width="48" height="48">
+   <properties>
+    <property name="interaction" value="Open"/>
+    <property name="mode" value="solo"/>
+    <property name="room_id" value="bedroom"/>
+    <property name="slots" type="int" value="0"/>
+   </properties>
+  </object>
+  <object id="98" name="bedroom-mirror" type="mirror" x="1792" y="384" width="32" height="96">
+   <properties>
+    <property name="interaction" value="Open"/>
+    <property name="mode" value="solo"/>
+    <property name="room_id" value="bedroom"/>
+    <property name="slots" type="int" value="0"/>
+   </properties>
+  </object>
+  <object id="101" name="bath-sink" type="sink" x="1184" y="800" width="128" height="64">
+   <properties>
+    <property name="interaction" value="Clean"/>
+    <property name="mode" value="solo"/>
+    <property name="room_id" value="bathroom"/>
+    <property name="slots" type="int" value="0"/>
+   </properties>
+  </object>
+  <object id="104" name="toilet" type="toilet" x="1440" y="800" width="64" height="96">
+   <properties>
+    <property name="interaction" value="Open"/>
+    <property name="mode" value="solo"/>
+    <property name="room_id" value="bathroom"/>
+    <property name="slots" type="int" value="0"/>
+   </properties>
+  </object>
+  <object id="107" name="shower" type="shower" x="1600" y="800" width="192" height="192">
+   <properties>
+    <property name="interaction" value="Clean"/>
+    <property name="mode" value="solo"/>
+    <property name="room_id" value="bathroom"/>
+    <property name="slots" type="int" value="0"/>
+   </properties>
+  </object>
+  <object id="110" name="laundry" type="laundry" x="1600" y="1120" width="64" height="64">
+   <properties>
+    <property name="interaction" value="Clean"/>
+    <property name="mode" value="solo"/>
+    <property name="room_id" value="bathroom"/>
+    <property name="slots" type="int" value="0"/>
+   </properties>
+  </object>
+ </objectgroup>
+ <objectgroup id="5" name="Decorations">
+  <object id="113" name="kitchen-decor-0" type="cabinet" x="768" y="96" width="96" height="64">
+   <properties>
+    <property name="room_id" value="kitchen"/>
+   </properties>
+  </object>
+  <object id="114" name="living-decor-1" type="window" x="64" y="864" width="8" height="160">
+   <properties>
+    <property name="room_id" value="living"/>
+   </properties>
+  </object>
+  <object id="115" name="living-decor-2" type="poster" x="576" y="768" width="96" height="8">
+   <properties>
+    <property name="room_id" value="living"/>
+   </properties>
+  </object>
+  <object id="116" name="living-decor-3" type="rug" x="96" y="896" width="320" height="320">
+   <properties>
+    <property name="room_id" value="living"/>
+   </properties>
+  </object>
+  <object id="117" name="bedroom-decor-4" type="photo" x="1216" y="40" width="64" height="16">
+   <properties>
+    <property name="room_id" value="bedroom"/>
+   </properties>
+  </object>
+  <object id="118" name="bedroom-decor-5" type="plush" x="1632" y="480" width="48" height="48">
+   <properties>
+    <property name="room_id" value="bedroom"/>
+   </properties>
+  </object>
+  <object id="119" name="bathroom-decor-6" type="mirror" x="1184" y="768" width="128" height="16">
+   <properties>
+    <property name="room_id" value="bathroom"/>
+   </properties>
+  </object>
+  <object id="120" name="bathroom-decor-7" type="mat" x="1568" y="1008" width="256" height="64">
+   <properties>
+    <property name="room_id" value="bathroom"/>
+   </properties>
+  </object>
+ </objectgroup>
+ <objectgroup id="6" name="Interactions">
+  <object id="42" name="fridge" type="fridge" x="136" y="248" width="16" height="16">
+   <properties>
+    <property name="interact_radius" type="int" value="80"/>
+    <property name="label" value="Open"/>
+    <property name="mode" value="solo"/>
+    <property name="object_id" value="fridge"/>
+    <property name="room_id" value="kitchen"/>
+   </properties>
+  </object>
+  <object id="45" name="stove" type="stove" x="296" y="216" width="16" height="16">
+   <properties>
+    <property name="interact_radius" type="int" value="80"/>
+    <property name="label" value="Cook"/>
+    <property name="mode" value="solo"/>
+    <property name="object_id" value="stove"/>
+    <property name="room_id" value="kitchen"/>
+   </properties>
+  </object>
+  <object id="48" name="kitchen-sink" type="sink" x="456" y="216" width="16" height="16">
+   <properties>
+    <property name="interact_radius" type="int" value="80"/>
+    <property name="label" value="Clean"/>
+    <property name="mode" value="solo"/>
+    <property name="object_id" value="kitchen-sink"/>
+    <property name="room_id" value="kitchen"/>
+   </properties>
+  </object>
+  <object id="53" name="island" type="island" x="360" y="472" width="16" height="16">
+   <properties>
+    <property name="interact_radius" type="int" value="80"/>
+    <property name="label" value="Cook"/>
+    <property name="mode" value="either"/>
+    <property name="object_id" value="island"/>
+    <property name="room_id" value="kitchen"/>
+   </properties>
+  </object>
+  <object id="58" name="dining" type="dining" x="664" y="504" width="16" height="16">
+   <properties>
+    <property name="interact_radius" type="int" value="80"/>
+    <property name="label" value="Sit"/>
+    <property name="mode" value="either"/>
+    <property name="object_id" value="dining"/>
+    <property name="room_id" value="kitchen"/>
+   </properties>
+  </object>
+  <object id="63" name="trash" type="trash" x="168" y="568" width="16" height="16">
+   <properties>
+    <property name="interact_radius" type="int" value="80"/>
+    <property name="label" value="Clean"/>
+    <property name="mode" value="solo"/>
+    <property name="object_id" value="trash"/>
+    <property name="room_id" value="kitchen"/>
+   </properties>
+  </object>
+  <object id="66" name="sofa" type="sofa" x="248" y="1192" width="16" height="16">
+   <properties>
+    <property name="interact_radius" type="int" value="80"/>
+    <property name="label" value="Sit"/>
+    <property name="mode" value="either"/>
+    <property name="object_id" value="sofa"/>
+    <property name="room_id" value="living"/>
+   </properties>
+  </object>
+  <object id="71" name="tv" type="tv" x="248" y="824" width="16" height="16">
+   <properties>
+    <property name="interact_radius" type="int" value="80"/>
+    <property name="label" value="Open"/>
+    <property name="mode" value="solo"/>
+    <property name="object_id" value="tv"/>
+    <property name="room_id" value="living"/>
+   </properties>
+  </object>
+  <object id="76" name="arcade" type="arcade" x="616" y="984" width="16" height="16">
+   <properties>
+    <property name="interact_radius" type="int" value="80"/>
+    <property name="label" value="Play"/>
+    <property name="mode" value="solo"/>
+    <property name="object_id" value="arcade"/>
+    <property name="room_id" value="living"/>
+   </properties>
+  </object>
+  <object id="87" name="bed" type="bed" x="1512" y="456" width="16" height="16">
+   <properties>
+    <property name="interact_radius" type="int" value="80"/>
+    <property name="label" value="Sleep"/>
+    <property name="mode" value="either"/>
+    <property name="object_id" value="bed"/>
+    <property name="room_id" value="bedroom"/>
+   </properties>
+  </object>
+  <object id="92" name="wardrobe" type="wardrobe" x="1704" y="200" width="16" height="16">
+   <properties>
+    <property name="interact_radius" type="int" value="80"/>
+    <property name="label" value="Change Clothes"/>
+    <property name="mode" value="solo"/>
+    <property name="object_id" value="wardrobe"/>
+    <property name="room_id" value="bedroom"/>
+   </properties>
+  </object>
+  <object id="97" name="bedroom-lamp" type="lamp" x="1288" y="264" width="16" height="16">
+   <properties>
+    <property name="interact_radius" type="int" value="80"/>
+    <property name="label" value="Open"/>
+    <property name="mode" value="solo"/>
+    <property name="object_id" value="bedroom-lamp"/>
+    <property name="room_id" value="bedroom"/>
+   </properties>
+  </object>
+  <object id="100" name="bedroom-mirror" type="mirror" x="1736" y="424" width="16" height="16">
+   <properties>
+    <property name="interact_radius" type="int" value="80"/>
+    <property name="label" value="Open"/>
+    <property name="mode" value="solo"/>
+    <property name="object_id" value="bedroom-mirror"/>
+    <property name="room_id" value="bedroom"/>
+   </properties>
+  </object>
+  <object id="103" name="bath-sink" type="sink" x="1240" y="888" width="16" height="16">
+   <properties>
+    <property name="interact_radius" type="int" value="80"/>
+    <property name="label" value="Clean"/>
+    <property name="mode" value="solo"/>
+    <property name="object_id" value="bath-sink"/>
+    <property name="room_id" value="bathroom"/>
+   </properties>
+  </object>
+  <object id="106" name="toilet" type="toilet" x="1464" y="920" width="16" height="16">
+   <properties>
+    <property name="interact_radius" type="int" value="80"/>
+    <property name="label" value="Open"/>
+    <property name="mode" value="solo"/>
+    <property name="object_id" value="toilet"/>
+    <property name="room_id" value="bathroom"/>
+   </properties>
+  </object>
+  <object id="109" name="shower" type="shower" x="1688" y="1032" width="16" height="16">
+   <properties>
+    <property name="interact_radius" type="int" value="80"/>
+    <property name="label" value="Clean"/>
+    <property name="mode" value="solo"/>
+    <property name="object_id" value="shower"/>
+    <property name="room_id" value="bathroom"/>
+   </properties>
+  </object>
+  <object id="112" name="laundry" type="laundry" x="1624" y="1208" width="16" height="16">
+   <properties>
+    <property name="interact_radius" type="int" value="80"/>
+    <property name="label" value="Clean"/>
+    <property name="mode" value="solo"/>
+    <property name="object_id" value="laundry"/>
+    <property name="room_id" value="bathroom"/>
+   </properties>
+  </object>
+ </objectgroup>
+ <objectgroup id="7" name="Slots">
+  <object id="54" name="island-0" type="slot" x="368" y="288">
+   <properties>
+    <property name="approach_x" type="float" value="368"/>
+    <property name="approach_y" type="int" value="480"/>
+    <property name="facing" value="down"/>
+    <property name="object_id" value="island"/>
+    <property name="slot_id" value="0"/>
+   </properties>
+  </object>
+  <object id="55" name="island-1" type="slot" x="368" y="480">
+   <properties>
+    <property name="approach_x" type="float" value="368"/>
+    <property name="approach_y" type="int" value="480"/>
+    <property name="facing" value="up"/>
+    <property name="object_id" value="island"/>
+    <property name="slot_id" value="1"/>
+   </properties>
+  </object>
+  <object id="59" name="dining-0" type="slot" x="576" y="384">
+   <properties>
+    <property name="approach_x" type="int" value="672"/>
+    <property name="approach_y" type="int" value="512"/>
+    <property name="facing" value="right"/>
+    <property name="object_id" value="dining"/>
+    <property name="slot_id" value="0"/>
+   </properties>
+  </object>
+  <object id="60" name="dining-1" type="slot" x="768" y="384">
+   <properties>
+    <property name="approach_x" type="int" value="672"/>
+    <property name="approach_y" type="int" value="512"/>
+    <property name="facing" value="left"/>
+    <property name="object_id" value="dining"/>
+    <property name="slot_id" value="1"/>
+   </properties>
+  </object>
+  <object id="67" name="sofa-0" type="slot" x="192" y="1120">
+   <properties>
+    <property name="approach_x" type="int" value="256"/>
+    <property name="approach_y" type="float" value="1200"/>
+    <property name="facing" value="down"/>
+    <property name="object_id" value="sofa"/>
+    <property name="slot_id" value="0"/>
+   </properties>
+  </object>
+  <object id="68" name="sofa-1" type="slot" x="320" y="1120">
+   <properties>
+    <property name="approach_x" type="int" value="256"/>
+    <property name="approach_y" type="float" value="1200"/>
+    <property name="facing" value="down"/>
+    <property name="object_id" value="sofa"/>
+    <property name="slot_id" value="1"/>
+   </properties>
+  </object>
+  <object id="88" name="bed-0" type="slot" x="1472" y="320">
+   <properties>
+    <property name="approach_x" type="float" value="1520"/>
+    <property name="approach_y" type="float" value="464"/>
+    <property name="facing" value="down"/>
+    <property name="object_id" value="bed"/>
+    <property name="slot_id" value="0"/>
+   </properties>
+  </object>
+  <object id="89" name="bed-1" type="slot" x="1568" y="320">
+   <properties>
+    <property name="approach_x" type="float" value="1520"/>
+    <property name="approach_y" type="float" value="464"/>
+    <property name="facing" value="down"/>
+    <property name="object_id" value="bed"/>
+    <property name="slot_id" value="1"/>
+   </properties>
+  </object>
+ </objectgroup>
+ <objectgroup id="8" name="Spawns">
+  <object id="121" name="kitchen-player" type="player-spawn" x="800" y="576">
+   <properties>
+    <property name="room_id" value="kitchen"/>
+   </properties>
+  </object>
+  <object id="122" name="kitchen-pet" type="pet-spawn" x="832" y="576">
+   <properties>
+    <property name="room_id" value="kitchen"/>
+   </properties>
+  </object>
+  <object id="123" name="bedroom-player" type="player-spawn" x="1216" y="576">
+   <properties>
+    <property name="room_id" value="bedroom"/>
+   </properties>
+  </object>
+  <object id="124" name="bedroom-pet" type="pet-spawn" x="1248" y="576">
+   <properties>
+    <property name="room_id" value="bedroom"/>
+   </properties>
+  </object>
+  <object id="125" name="living-player" type="player-spawn" x="848" y="1248">
+   <properties>
+    <property name="room_id" value="living"/>
+   </properties>
+  </object>
+  <object id="126" name="living-pet" type="pet-spawn" x="880" y="1248">
+   <properties>
+    <property name="room_id" value="living"/>
+   </properties>
+  </object>
+  <object id="127" name="bathroom-player" type="player-spawn" x="1216" y="1248">
+   <properties>
+    <property name="room_id" value="bathroom"/>
+   </properties>
+  </object>
+  <object id="128" name="bathroom-pet" type="pet-spawn" x="1248" y="1248">
+   <properties>
+    <property name="room_id" value="bathroom"/>
+   </properties>
+  </object>
+  <object id="129" name="hall-player" type="player-spawn" x="992" y="1248">
+   <properties>
+    <property name="room_id" value="hall"/>
+   </properties>
+  </object>
+  <object id="130" name="hall-pet" type="pet-spawn" x="1024" y="1248">
+   <properties>
+    <property name="room_id" value="hall"/>
+   </properties>
+  </object>
+  <object id="131" name="partner-a" type="player-spawn" x="992" y="1120">
+   <properties>
+    <property name="room_id" value="hall"/>
+    <property name="seat" type="int" value="1"/>
+   </properties>
+  </object>
+  <object id="132" name="partner-b" type="player-spawn" x="1056" y="1120">
+   <properties>
+    <property name="room_id" value="hall"/>
+    <property name="seat" type="int" value="2"/>
+   </properties>
+  </object>
+ </objectgroup>
+ <objectgroup id="9" name="Collision">
+  <object id="7" name="north" type="wall" x="0" y="0" width="2048" height="32"/>
+  <object id="9" name="south" type="wall" x="0" y="1376" width="2048" height="32"/>
+  <object id="11" name="west" type="wall" x="0" y="32" width="32" height="1344"/>
+  <object id="13" name="east" type="wall" x="2016" y="32" width="32" height="1344"/>
+  <object id="15" name="hall-29-a" type="wall" x="928" y="32" width="32" height="256"/>
+  <object id="17" name="hall-29-b" type="wall" x="928" y="384" width="32" height="544"/>
+  <object id="19" name="hall-29-c" type="wall" x="928" y="1024" width="32" height="352"/>
+  <object id="21" name="hall-34-a" type="wall" x="1088" y="32" width="32" height="256"/>
+  <object id="23" name="hall-34-b" type="wall" x="1088" y="384" width="32" height="544"/>
+  <object id="25" name="hall-34-c" type="wall" x="1088" y="1024" width="32" height="352"/>
+  <object id="27" name="left-middle-a" type="wall" x="32" y="704" width="320" height="32"/>
+  <object id="29" name="left-middle-b" type="wall" x="448" y="704" width="480" height="32"/>
+  <object id="31" name="right-middle-a" type="wall" x="1120" y="704" width="384" height="32"/>
+  <object id="33" name="right-middle-b" type="wall" x="1600" y="704" width="416" height="32"/>
+  <object id="41" name="fridge" type="fridge" x="96" y="96" width="96" height="128"/>
+  <object id="44" name="stove" type="stove" x="256" y="96" width="96" height="96"/>
+  <object id="47" name="kitchen-sink" type="sink" x="416" y="96" width="96" height="96"/>
+  <object id="50" name="counter" type="counter" x="576" y="96" width="160" height="64"/>
+  <object id="52" name="island" type="island" x="256" y="320" width="224" height="128"/>
+  <object id="57" name="dining" type="dining" x="608" y="320" width="128" height="160"/>
+  <object id="62" name="trash" type="trash" x="96" y="544" width="48" height="64"/>
+  <object id="65" name="sofa" type="sofa" x="128" y="1056" width="256" height="96"/>
+  <object id="70" name="tv" type="tv" x="128" y="768" width="256" height="32"/>
+  <object id="73" name="coffee-table" type="coffee-table" x="160" y="928" width="192" height="96"/>
+  <object id="75" name="arcade" type="arcade" x="576" y="832" width="96" height="128"/>
+  <object id="78" name="arcade-stool-a" type="stool" x="576" y="1056" width="48" height="48"/>
+  <object id="80" name="arcade-stool-b" type="stool" x="672" y="1056" width="48" height="48"/>
+  <object id="82" name="living-shelf" type="shelf" x="736" y="1152" width="64" height="128"/>
+  <object id="84" name="plant" type="plant" x="96" y="1248" width="64" height="64"/>
+  <object id="86" name="bed" type="bed" x="1408" y="192" width="224" height="224"/>
+  <object id="91" name="wardrobe" type="wardrobe" x="1760" y="96" width="64" height="224"/>
+  <object id="94" name="bookshelf" type="bookshelf" x="1184" y="96" width="128" height="48"/>
+  <object id="96" name="bedroom-lamp" type="lamp" x="1280" y="192" width="48" height="48"/>
+  <object id="99" name="bedroom-mirror" type="mirror" x="1792" y="384" width="32" height="96"/>
+  <object id="102" name="bath-sink" type="sink" x="1184" y="800" width="128" height="64"/>
+  <object id="105" name="toilet" type="toilet" x="1440" y="800" width="64" height="96"/>
+  <object id="108" name="shower" type="shower" x="1600" y="800" width="192" height="192"/>
+  <object id="111" name="laundry" type="laundry" x="1600" y="1120" width="64" height="64"/>
+ </objectgroup>
+ <layer id="10" name="Navigation" width="64" height="44" visible="0">
+  <data encoding="csv">
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,
+0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,
+0,1,1,0,0,0,1,1,0,0,0,1,1,0,0,0,1,1,0,0,0,0,0,1,1,1,1,1,1,0,1,1,1,1,0,1,1,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,1,1,1,1,1,1,0,
+0,1,1,0,0,0,1,1,0,0,0,1,1,0,0,0,1,1,0,0,0,0,0,1,1,1,1,1,1,0,1,1,1,1,0,1,1,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,1,1,1,1,1,1,0,
+0,1,1,0,0,0,1,1,0,0,0,1,1,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,1,1,1,1,1,1,0,
+0,1,1,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,0,1,1,1,1,1,0,0,1,1,0,0,0,0,0,0,0,1,1,1,1,0,0,1,1,1,1,1,1,0,
+0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,0,1,1,1,1,1,0,0,1,1,0,0,0,0,0,0,0,1,1,1,1,0,0,1,1,1,1,1,1,0,
+0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,0,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,1,1,1,1,0,0,1,1,1,1,1,1,0,
+0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,1,1,1,1,0,0,1,1,1,1,1,1,0,
+0,1,1,1,1,1,1,1,0,0,0,0,0,0,0,1,1,1,1,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,0,
+0,1,1,1,1,1,1,1,0,0,0,0,0,0,0,1,1,1,1,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,0,
+0,1,1,1,1,1,1,1,0,0,0,0,0,0,0,1,1,1,1,0,0,0,0,1,1,1,1,1,1,0,1,1,1,1,0,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,1,1,1,1,1,0,1,1,1,1,1,1,0,
+0,1,1,1,1,1,1,1,0,0,0,0,0,0,0,1,1,1,1,0,0,0,0,1,1,1,1,1,1,0,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,0,
+0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,1,1,1,1,1,1,0,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,0,
+0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,
+0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,
+0,1,1,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,
+0,1,1,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,
+0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,
+0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,
+0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,
+0,0,0,0,0,0,0,0,0,0,0,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,
+0,1,1,1,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,
+0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,0,1,1,0,0,0,0,1,1,1,1,0,0,1,1,1,0,0,0,0,0,0,1,1,1,1,1,1,1,0,
+0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,1,1,1,1,1,1,1,1,0,1,1,1,1,0,1,1,0,0,0,0,1,1,1,1,0,0,1,1,1,0,0,0,0,0,0,1,1,1,1,1,1,1,0,
+0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,1,1,1,1,1,1,1,1,0,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,0,0,1,1,1,0,0,0,0,0,0,1,1,1,1,1,1,1,0,
+0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,1,1,1,1,1,1,1,1,0,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,1,1,1,1,1,1,1,0,
+0,1,1,1,1,0,0,0,0,0,0,1,1,1,1,1,1,1,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,1,1,1,1,1,1,1,0,
+0,1,1,1,1,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,1,1,1,1,1,1,1,0,
+0,1,1,1,1,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,
+0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,
+0,1,1,1,0,0,0,0,0,0,0,0,1,1,1,1,1,1,0,0,1,0,0,1,1,1,1,1,1,0,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,
+0,1,1,1,0,0,0,0,0,0,0,0,1,1,1,1,1,1,0,0,1,0,0,1,1,1,1,1,1,0,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,
+0,1,1,1,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,1,1,1,1,1,1,1,1,1,1,1,0,
+0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,1,1,1,1,0,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,1,1,1,1,1,1,1,1,1,1,1,0,
+0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,1,1,1,1,0,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,
+0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,1,1,1,1,0,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,
+0,1,1,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,1,1,1,1,0,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,
+0,1,1,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,
+0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,
+0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+</data>
+ </layer>
+</map>

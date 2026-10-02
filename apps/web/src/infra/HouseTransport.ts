@@ -1,9 +1,9 @@
 import type { RealtimeChannel, SupabaseClient } from '@supabase/supabase-js';
-import { coupleIdSchema, motionEvents, motionSchema, presenceSchema, syncRequestSchema, syncResponseSchema } from '@paw/shared';
+import { coupleIdSchema, motionEvents, motionSchema, presenceSchema, syncRequestSchema, syncResponseSchema, objectChangedSchema } from '@paw/shared';
 import type { ConnectionState, HouseEventMap, HousePresence, MotionEvent } from '@paw/shared';
 
 export type HouseMessage = { event: MotionEvent; payload: HouseEventMap[MotionEvent] } |
-  { event: 'sync_request'; payload: HouseEventMap['sync_request'] } | { event: 'sync_response'; payload: HouseEventMap['sync_response'] };
+  { event: 'sync_request'; payload: HouseEventMap['sync_request'] } | { event: 'sync_response'; payload: HouseEventMap['sync_response'] } | {event:'object_changed';payload:HouseEventMap['object_changed']};
 export interface HouseRealtimeTransport {
   connect(): Promise<void>; join(coupleId: string): Promise<void>; send(message: HouseMessage): Promise<void>;
   track(value: HousePresence): Promise<void>; presence(): HousePresence[];
@@ -21,7 +21,7 @@ export class HouseTransport implements HouseRealtimeTransport {
   private presences = new Set<(values: HousePresence[]) => void>();
   private cancel: (() => void) | undefined;
   private generation = 0;
-  constructor(private client: SupabaseClient) {}
+  constructor(private client: SupabaseClient, private mapId: 'phase1-room' | 'cottage-v1' = 'phase1-room') {}
   private setState(value: ConnectionState) { this.state=value; this.states.forEach(listener=>listener(value)); }
   async connect() {
     const { data,error }=await this.client.auth.getSession();
@@ -34,8 +34,9 @@ export class HouseTransport implements HouseRealtimeTransport {
     await this.release();
     if(generation!==this.generation)throw new Error('Connection cancelled.');
     this.setState('connecting');
-    const channel=this.client.channel(`house:${coupleId}`,{config:{private:true,broadcast:{ack:true,self:false}}});
+    const channel=this.client.channel(`house:${coupleId}${this.mapId==='cottage-v1'?':cottage-v1':''}`,{config:{private:true,broadcast:{ack:true,self:false}}});
     this.channel=channel;
+    channel.on('broadcast',{event:'object_changed'},({payload}:{payload:unknown})=>{const parsed=objectChangedSchema.safeParse(payload);if(this.channel===channel&&parsed.success)this.messages.forEach(listener=>listener({event:'object_changed',payload:parsed.data}));});
     for (const event of motionEvents) channel.on('broadcast',{event},({payload}: {payload:unknown})=>{
       if (this.channel!==channel) return;
       const parsed=motionSchema.safeParse(payload); if(parsed.success) this.messages.forEach(listener=>listener({event,payload:parsed.data}));
@@ -61,7 +62,8 @@ export class HouseTransport implements HouseRealtimeTransport {
   }
   async send(message: HouseMessage) {
     if(!this.channel||this.state!=='connected')throw new Error('Reconnect to play together.');
-    if(message.event==='sync_request')syncRequestSchema.parse(message.payload);
+    if(message.event==='object_changed')objectChangedSchema.parse(message.payload);
+    else if(message.event==='sync_request')syncRequestSchema.parse(message.payload);
     else if(message.event==='sync_response')syncResponseSchema.parse(message.payload);
     else motionSchema.parse(message.payload);
     const result=await this.channel.send({type:'broadcast',event:message.event,payload:message.payload});

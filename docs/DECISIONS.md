@@ -1,5 +1,11 @@
 # DECISIONS
 
+## 2026-10-03 — Phase 2 balanced cottage and map authority
+
+User authorized Phase 2 and selected spacing A: 64×44 at 32px, four-tile hall and three-tile doors. Author the source map through official Tiled scripting/export before game integration, retain editable TMX and exported JSON, and validate geometry/navigation/spawns/interaction slots. Use custom code-native furniture art in the approved palette instead of unrelated downloaded assets. Preserve existing motion smoothing and input; derive collision, rooms and prompts from the map rather than maintaining a second hard-coded layout.
+
+Shared furniture occupancy/toggles use additive RLS-protected tables and caller-bound idempotent RPCs with atomic slot claims, bounded leases and cancellation/recovery. No client direct writes, economy or Phase 3 activities. Keep the existing map live until the compatible new client/schema rollout is verified; version channels by map so old test-room clients cannot share incompatible geometry. Expand snapshot/event contracts with the implementation. Future-system prompts explain availability without implementing cooking, games or character customization. Preserve transient feedback at three seconds.
+
 ## Phase 1 partner movement correction — 2026-10-03
 
 User verified real web/Android connection, reconnect and Away, but reported smooth local movement with delayed/jumping partner movement. Keep Phase 1 open while fixing this; network quality has not been measured and is not assumed to be the sole cause. Preserve approved visuals, database authority, transport and moving-only one-second corrections.

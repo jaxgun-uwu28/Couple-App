@@ -2,6 +2,10 @@
 
 Status: **ART DIRECTION AND PHASE 0 REFERENCES APPROVED — 2026-10-02.** User approved the connected home and interaction studies with "looks good proceed". These remain concept references, not finished production assets.
 
+## Phase 2 production spacing — approved 2026-10-03
+
+User chose **A — Balanced cottage** from the [spacing review](mockups/phase-2-layout-options.png): 64×44 tiles (2048×1408px), 32px tiles, four-tile clear central hall and three-tile room doorways. Preserve the approved arrangement, furniture styles, arcade nook, camera and independent landscape HUD. Validate actual furniture/slot reachability in the production Tiled map.
+
 ## Approved choices
 - Perspective: **1A — Cozy top-down**; visible floor, shallow front walls, broad furniture footprints.
 - Character style: **2A — Soft chibi**; large heads, compact bodies, clear hair/outfit silhouettes and four-direction sprites.

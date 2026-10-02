@@ -6,7 +6,7 @@ export const memberSchema = z.object({ user_id: z.uuid(), seat: z.union([z.liter
 export const fullSnapshotSchema = z.object({
   kind: z.literal('full'), version: z.number().int().positive(), user_id: z.uuid(), couple_id: z.uuid(),
   status: z.enum(['pending', 'active']), members: z.array(memberSchema).min(1).max(2),
-  house: z.object({ id: z.uuid(), map_id: z.literal('phase1-room'), layout_version: z.literal(1) }).strict(),
+  house: z.discriminatedUnion('map_id', [z.object({ id: z.uuid(), map_id: z.literal('phase1-room'), layout_version: z.literal(1) }).strict(), z.object({ id: z.uuid(), map_id: z.literal('cottage-v1'), layout_version: z.literal(2) }).strict()]),
   invite: z.object({ code: z.string().regex(/^[23456789ABCDEFGHJKLMNPQRSTUVWXYZ]{8}$/), expires_at: z.iso.datetime({ offset: true }) }).strict().nullable(),
   server_time: z.iso.datetime({ offset: true }),
 }).strict().superRefine((value, context) => {
@@ -26,18 +26,22 @@ export const actionResultSchema = z.discriminatedUnion('ok', [
 export const motionSchema = z.object({
   user_id: z.uuid(), couple_id: z.uuid(), session_id: z.uuid(), seq: z.number().int().min(0).max(Number.MAX_SAFE_INTEGER),
   x: z.number().finite(), y: z.number().finite(), vx: z.number().finite(), vy: z.number().finite(),
-  direction: directionSchema, animation: z.enum(['idle', 'walk']), room: z.literal('phase1-room'),
+  direction: directionSchema, animation: z.enum(['idle', 'walk']), room: z.enum(['phase1-room','hall','kitchen','living','bedroom','bathroom']),
   motion_ms: z.number().finite().nonnegative().optional(),
 }).strict();
 export type Motion = z.infer<typeof motionSchema>;
-export const presenceSchema = z.object({ user_id: z.uuid(), session_id: z.uuid(), joined_at: z.iso.datetime({ offset: true }), room: z.literal('phase1-room'), status: z.enum(['online', 'away']), device: z.enum(['web', 'android']), app_version: z.literal('phase1'), motion_clock: z.literal(1).optional() });
+export const presenceSchema = z.object({ user_id: z.uuid(), session_id: z.uuid(), joined_at: z.iso.datetime({ offset: true }), room: z.enum(['phase1-room','hall','kitchen','living','bedroom','bathroom']), status: z.enum(['online', 'away']), device: z.enum(['web', 'android']), app_version: z.enum(['phase1','phase2']), motion_clock: z.literal(1).optional() });
 export type HousePresence = z.infer<typeof presenceSchema>;
 export const syncRequestSchema = z.object({ request_id: z.uuid(), user_id: z.uuid(), session_id: z.uuid() }).strict();
 export const syncResponseSchema = z.object({ request_id: z.uuid(), to_session: z.uuid(), player: motionSchema }).strict();
 export const motionEvents = ['PLAYER_JOINED', 'PLAYER_LEFT', 'PLAYER_MOVED', 'PLAYER_STOPPED', 'PLAYER_ANIMATION_CHANGED', 'PLAYER_ROOM_CHANGED'] as const;
 export type MotionEvent = typeof motionEvents[number];
-export type HouseEvent = MotionEvent | 'sync_request' | 'sync_response';
-export type HouseEventMap = { [E in MotionEvent]: Motion } & { sync_request: z.infer<typeof syncRequestSchema>; sync_response: z.infer<typeof syncResponseSchema> };
+export const objectChangedSchema = z.object({ couple_id: z.uuid(), user_id: z.uuid(), session_id: z.uuid(), request_id: z.uuid() }).strict();
+export const worldStateSchema = z.object({ couple_id: z.uuid(), server_time: z.iso.datetime({offset:true}), states: z.array(z.object({object_id:z.string().min(1).max(64),enabled:z.boolean()}).strict()).max(32), slots: z.array(z.object({object_id:z.string().min(1).max(64),slot_id:z.string().max(8),user_id:z.uuid(),session_id:z.uuid(),expires_at:z.iso.datetime({offset:true})}).strict()).max(2) }).strict();
+export type WorldState = z.infer<typeof worldStateSchema>;
+export const interactionResultSchema = z.discriminatedUnion('ok',[z.object({ok:z.literal(true),couple_id:z.uuid()}).strict(),z.object({ok:z.literal(false),couple_id:z.uuid().optional(),code:z.enum(['REQUEST_CONFLICT','NO_HOUSE','INVALID_ACTION','INVALID_OBJECT','OUT_OF_RANGE','UNAVAILABLE','INVALID_SLOT','BUSY','ALREADY_USING','NOT_OWNER'])}).strict()]);
+export type HouseEvent = MotionEvent | 'sync_request' | 'sync_response' | 'object_changed';
+export type HouseEventMap = { [E in MotionEvent]: Motion } & { sync_request: z.infer<typeof syncRequestSchema>; sync_response: z.infer<typeof syncResponseSchema>; object_changed:z.infer<typeof objectChangedSchema> };
 
 export const WORLD = {
   width: 1400, height: 1000, margin: 44, radius: 15, speed: 170,
@@ -49,30 +53,31 @@ export const WORLD = {
   ],
 } as const;
 export type Point = { x: number; y: number };
+export type Geometry = { width: number; height: number; margin: number; radius: number; speed: number; furniture: readonly { x: number; y: number; width: number; height: number }[] };
 export const spawn = (seat: number): Point => ({ x: seat === 1 ? 590 : 780, y: 490 });
-export function clampPoint(point: Point): Point {
-  return { x: Math.max(WORLD.margin + WORLD.radius, Math.min(WORLD.width - WORLD.margin - WORLD.radius, point.x)), y: Math.max(WORLD.margin + WORLD.radius, Math.min(WORLD.height - WORLD.margin - WORLD.radius, point.y)) };
+export function clampPoint(point: Point, world: Geometry = WORLD): Point {
+  return { x: Math.max(world.margin + world.radius, Math.min(world.width - world.margin - world.radius, point.x)), y: Math.max(world.margin + world.radius, Math.min(world.height - world.margin - world.radius, point.y)) };
 }
-export function collides(point: Point): boolean {
-  return WORLD.furniture.some(box => point.x > box.x - WORLD.radius && point.x < box.x + box.width + WORLD.radius && point.y > box.y - WORLD.radius && point.y < box.y + box.height + WORLD.radius);
+export function collides(point: Point, world: Geometry = WORLD): boolean {
+  return world.furniture.some(box => point.x > box.x - world.radius && point.x < box.x + box.width + world.radius && point.y > box.y - world.radius && point.y < box.y + box.height + world.radius);
 }
-export function movePoint(point: Point, velocity: Point, seconds: number): Point {
+export function movePoint(point: Point, velocity: Point, seconds: number, world: Geometry = WORLD): Point {
   // Substeps stop fast input/latency frames tunnelling through furniture.
   const dt = Math.min(.25, Math.max(0, seconds));
   const steps = Math.max(1, Math.ceil(Math.hypot(velocity.x, velocity.y) * dt / 8));
   let result = { ...point };
   for (let step = 0; step < steps; step++) {
-    const nextX = clampPoint({ x: result.x + velocity.x * dt / steps, y: result.y });
-    if (!collides(nextX)) result.x = nextX.x;
-    const nextY = clampPoint({ x: result.x, y: result.y + velocity.y * dt / steps });
-    if (!collides(nextY)) result.y = nextY.y;
+    const nextX = clampPoint({ x: result.x + velocity.x * dt / steps, y: result.y }, world);
+    if (!collides(nextX, world)) result.x = nextX.x;
+    const nextY = clampPoint({ x: result.x, y: result.y + velocity.y * dt / steps }, world);
+    if (!collides(nextY, world)) result.y = nextY.y;
   }
   return result;
 }
-export function velocity(input: Point): Point {
+export function velocity(input: Point, world: Geometry = WORLD): Point {
   const length = Math.hypot(input.x, input.y);
   if (!length || !Number.isFinite(length)) return { x: 0, y: 0 };
-  const factor = WORLD.speed / Math.max(1, length);
+  const factor = world.speed / Math.max(1, length);
   return { x: input.x * factor, y: input.y * factor };
 }
 export function facing(vector: Point, previous: Direction): Direction {
@@ -110,22 +115,22 @@ export class RemoteMotion {
   private clockOffset: number | null = null;
   private timeline: { at: number; frame: Motion }[] = [];
   private displayed: Motion | null = null;
-  constructor(initial: Point) { this.rendered = { ...initial }; }
+  constructor(initial: Point, private world: Geometry = WORLD) { this.rendered = { ...initial }; }
   accept(frame: Motion, now: number, initialSync = false): boolean {
     if (this.latest && frame.session_id === this.latest.session_id && frame.seq <= this.latest.seq) return false;
     const sameSession = this.latest?.session_id === frame.session_id;
     if (sameSession && frame.motion_ms !== undefined && this.latest?.motion_ms !== undefined && frame.motion_ms < this.latest.motion_ms) return false;
-    let point = clampPoint(frame);
-    if (collides(point)) point = this.latest ? { x: this.latest.x, y: this.latest.y } : this.rendered;
+    let point = clampPoint(frame, this.world);
+    if (collides(point, this.world)) point = this.latest ? { x: this.latest.x, y: this.latest.y } : this.rendered;
     if (this.latest && !initialSync && frame.session_id === this.latest.session_id) {
       const delta = { x: point.x - this.latest.x, y: point.y - this.latest.y };
       const interval = frame.motion_ms !== undefined && this.latest.motion_ms !== undefined ? frame.motion_ms - this.latest.motion_ms : now - this.receivedAt;
-      const limit = WORLD.speed * Math.min(2, Math.max(0, interval / 1000)) + 48;
+      const limit = this.world.speed * Math.min(2, Math.max(0, interval / 1000)) + 48;
       const distance = Math.hypot(delta.x, delta.y);
       if (distance > limit) point = { x: this.latest.x + delta.x * limit / distance, y: this.latest.y + delta.y * limit / distance };
-      if (collides(point)) point = { x: this.latest.x, y: this.latest.y };
+      if (collides(point, this.world)) point = { x: this.latest.x, y: this.latest.y };
     }
-    let v = velocity({ x: frame.vx / WORLD.speed, y: frame.vy / WORLD.speed });
+    let v = velocity({ x: frame.vx / this.world.speed, y: frame.vy / this.world.speed }, this.world);
     if (frame.animation === 'idle') v = { x: 0, y: 0 };
     if (!this.latest) this.rendered = { ...point };
     if (!sameSession) { this.timeline = []; this.clockOffset = null; }
@@ -157,15 +162,15 @@ export class RemoteMotion {
     const elapsed = Math.min(1.4, Math.max(0, age / 1000));
     let target: Point = { x: source.x, y: source.y };
     // Collision-aware extrapolation may cover > one quarter second.
-    for (let remaining = elapsed; remaining > 0; remaining -= .25) target = movePoint(target, { x: source.vx, y: source.vy }, Math.min(.25, remaining));
+    for (let remaining = elapsed; remaining > 0; remaining -= .25) target = movePoint(target, { x: source.vx, y: source.vy }, Math.min(.25, remaining), this.world);
     const renderStep = Math.min(.1, Math.max(0, dt));
     const blend = 1 - Math.exp(-renderStep * 12);
     const correction = { x: (target.x - this.rendered.x) * blend, y: (target.y - this.rendered.y) * blend };
     const distance = Math.hypot(correction.x, correction.y);
-    const limit = WORLD.speed * 1.4 * renderStep;
+    const limit = this.world.speed * 1.4 * renderStep;
     const scale = distance > limit ? limit / distance : 1;
     // Collision substeps apply to corrections too; a delayed packet never snaps.
-    this.rendered = movePoint(this.rendered, { x: correction.x * scale / Math.max(.001, renderStep), y: correction.y * scale / Math.max(.001, renderStep) }, renderStep);
+    this.rendered = movePoint(this.rendered, { x: correction.x * scale / Math.max(.001, renderStep), y: correction.y * scale / Math.max(.001, renderStep) }, renderStep, this.world);
     return this.rendered;
   }
   get frame(): Motion | null { return this.latest; }

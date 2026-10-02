@@ -1,6 +1,8 @@
 import { expect, test } from '@playwright/test';
 import type { BrowserContext, Page, WebSocketRoute } from '@playwright/test';
 import { mkdir } from 'node:fs/promises';
+import { COTTAGE,cottageInteractions } from '../../packages/shared/src/cottage';
+import {collides} from '../../packages/shared/src/house';
 const ids=['11111111-1111-4111-8111-111111111111','22222222-2222-4222-8222-222222222222'];
 const couple='33333333-3333-4333-8333-333333333333';const house='44444444-4444-4444-8444-444444444444';
 type Peer={socket:WebSocketRoute;topic:string;joinRef:string|null;presence?:Record<string,unknown>};
@@ -12,13 +14,15 @@ function decode(message:string|Buffer):[string|null,string|null,string,string,Re
   for(let index=1;index<=5;index++){const length=message[index]!;fields.push(message.subarray(offset,offset+length).toString('utf8'));offset+=length;}
   return[fields[0]!,fields[1]!,fields[2]!,'broadcast',{type:'broadcast',event:fields[3]!,payload:JSON.parse(message.subarray(offset).toString('utf8'))}];
 }
-function fixture() {
+function fixture(cottage=false) {
   const peers=new Set<Peer>(); let members=0;let version=1;let invite='ABCD2345';let failSnapshot=false;let signupConfirmation=true;let legacyClock=false;let clockPackets=0;
   const actions=new Map<string,unknown>();let createCount=0;
+  const objectStates=new Map<string,boolean>();
+  const objectSlots:{object_id:string;slot_id:string;user_id:string;session_id:string;expires_at:string}[]=[];
   const snapshot=(userId:string,since:number,known:string|null)=>{
     if(!members||(userId===ids[1]&&members<2))return{kind:'none',version:0,user_id:userId,server_time:new Date().toISOString()};
     if(since===version&&known===couple)return{kind:'unchanged',version,user_id:userId,couple_id:couple,server_time:new Date().toISOString()};
-    return{kind:'full',version,user_id:userId,couple_id:couple,status:members===2?'active':'pending',members:ids.slice(0,members).map((id,index)=>({user_id:id,seat:index+1,role:index===0?'partner_a':'partner_b',display_name:index===0?'Rose':'Sky',joined_at:'2026-10-02T00:00:00Z'})),house:{id:house,map_id:'phase1-room',layout_version:1},invite:members===1?{code:invite,expires_at:'2099-10-09T00:00:00Z'}:null,server_time:new Date().toISOString()};
+    return{kind:'full',version,user_id:userId,couple_id:couple,status:members===2?'active':'pending',members:ids.slice(0,members).map((id,index)=>({user_id:id,seat:index+1,role:index===0?'partner_a':'partner_b',display_name:index===0?'Rose':'Sky',joined_at:'2026-10-02T00:00:00Z'})),house:{id:house,map_id:cottage?'cottage-v1':'phase1-room',layout_version:cottage?2:1},invite:members===1?{code:invite,expires_at:'2099-10-09T00:00:00Z'}:null,server_time:new Date().toISOString()};
   };
   const send=(peer:Peer,event:string,payload:unknown,delay=0)=>{setTimeout(()=>{try{peer.socket.send(JSON.stringify([peer.joinRef,null,peer.topic,event,payload]));}catch{/* Closed test page. */}},delay);};
   const presence=()=>{const values=Object.fromEntries([...peers].filter(peer=>peer.presence).map(peer=>[String(peer.presence!.session_id),{metas:[{...peer.presence,phx_ref:peer.presence!.session_id}]}]));for(const peer of peers)send(peer,'presence_state',values);};
@@ -38,7 +42,19 @@ function fixture() {
         else if(path==='/auth/v1/logout')await route.fulfill({status:204});
         else if(path.startsWith('/rest/v1/rpc/')){
           const rpc=path.split('/').at(-1);const args=route.request().postDataJSON() as Record<string,unknown>;
-          if(rpc==='get_house_snapshot'){if(failSnapshot)await route.abort();else await route.fulfill({json:snapshot(user.id,Number(args.p_since_version),args.p_known_couple_id as string|null)});return;}
+          if(rpc==='get_house_snapshot_v2'){if(failSnapshot)await route.abort();else await route.fulfill({json:snapshot(user.id,Number(args.p_since_version),args.p_known_couple_id as string|null)});return;}
+          if(rpc==='get_house_world'){await route.fulfill({json:{couple_id:couple,server_time:new Date().toISOString(),states:[...objectStates].map(([object_id,enabled])=>({object_id,enabled})),slots:objectSlots}});return;}
+          if(rpc==='house_interact'){
+            const key=String(args.p_idempotency_key);let result=actions.get(key);
+            if(!result){const object=cottageInteractions.find(o=>o.id===args.p_object_id);result={ok:true,couple_id:couple};
+              if(args.p_action==='cancel'){for(let i=objectSlots.length-1;i>=0;i--)if(objectSlots[i]!.user_id===user.id&&objectSlots[i]!.session_id===args.p_session_id)objectSlots.splice(i,1);}
+              else if(!object)result={ok:false,code:'INVALID_OBJECT',couple_id:couple};
+              else if(args.p_action==='start'){if(objectSlots.some(s=>s.object_id===object.id&&s.slot_id===args.p_slot_id))result={ok:false,code:'BUSY',couple_id:couple};else objectSlots.push({object_id:object.id,slot_id:String(args.p_slot_id),user_id:user.id,session_id:String(args.p_session_id),expires_at:new Date(Date.now()+90000).toISOString()});}
+              else if(args.p_action==='renew'){const slot=objectSlots.find(s=>s.user_id===user.id&&s.session_id===args.p_session_id);if(slot)slot.expires_at=new Date(Date.now()+90000).toISOString();else result={ok:false,code:'NOT_OWNER',couple_id:couple};}
+              else if(['fridge','lamp','tv','toilet'].includes(object.type))objectStates.set(object.id,!objectStates.get(object.id));
+              else result={ok:false,code:'UNAVAILABLE',couple_id:couple};actions.set(key,result);
+            }await route.fulfill({json:result});return;
+          }
           const key=String(args.p_idempotency_key);let result=actions.get(key);
           if(!result){
             if(rpc==='create_couple'){if(members)result={ok:false,code:'ALREADY_IN_COUPLE'};else{members=1;createCount++;result={ok:true,couple_id:couple};}}
@@ -55,7 +71,7 @@ function fixture() {
         socket.onMessage(message=>{
           const [joinRef,ref,topic,event,payload]=decode(message);
           const reply=(response:unknown={})=>socket.send(JSON.stringify([joinRef,ref,topic,'phx_reply',{status:'ok',response}]));
-          if(event==='phx_join'){expect(topic).toBe(`realtime:house:${couple}`);peer={socket,topic,joinRef};peers.add(peer);reply();presence();}
+          if(event==='phx_join'){expect(topic).toBe(`realtime:house:${couple}${cottage?':cottage-v1':''}`);peer={socket,topic,joinRef};peers.add(peer);reply();presence();}
           else if(event==='phx_leave'){if(peer)peers.delete(peer);peer=undefined;reply();presence();}
           else if(event==='presence'&&peer){peer.presence={...payload.payload as Record<string,unknown>};if(legacyClock)delete peer.presence.motion_clock;reply();presence();}
           else if(event==='broadcast'&&peer){const value=payload.payload as Record<string,unknown>;if(value?.motion_ms!==undefined)clockPackets++;reply();for(const other of peers)if(other!==peer)send(other,'broadcast',payload,150);}
@@ -68,6 +84,37 @@ function fixture() {
 }
 async function login(page:Page,index:number,path='/'){await page.goto(path);await page.getByLabel('Email',{exact:true}).fill(`player${index}@example.test`);await page.getByLabel('Password',{exact:true}).fill('fixture-password');await page.getByRole('button',{name:'Sign in',exact:true}).click();}
 async function coordinate(page:Page,attribute='data-self-x'){return Number(await page.getByTestId('world').getAttribute(attribute));}
+
+async function walkTo(page:Page,x:number,y:number){
+ await page.locator("canvas").click();
+ const start=[Math.floor(await coordinate(page)/32),Math.floor(await coordinate(page,'data-self-y')/32)],goal=[Math.floor(x/32),Math.floor(y/32)];
+ const key=(p:number[])=>p.join(',');const queue=[start],parents=new Map<string,string|null>([[key(start),null]]);
+ for(let i=0;i<queue.length&&!parents.has(key(goal));i++)for(const n of [[queue[i]![0]!+1,queue[i]![1]!],[queue[i]![0]!-1,queue[i]![1]!],[queue[i]![0]!,queue[i]![1]!+1],[queue[i]![0]!,queue[i]![1]!-1]]){if(n[0]!<0||n[1]!<0||n[0]!>=64||n[1]!>=44||parents.has(key(n))||collides({x:n[0]!*32+16,y:n[1]!*32+16},COTTAGE))continue;parents.set(key(n),key(queue[i]!));queue.push(n);}
+ expect(parents.has(key(goal))).toBe(true);
+ const path:number[][]=[];for(let p:string|null=key(goal);p!==null;p=parents.get(p)??null)path.unshift(p.split(',').map(Number));
+ const points=path.filter((p,i)=>i===0||i===path.length-1||(p[0]!-path[i-1]![0]!)!==(path[i+1]![0]!-p[0]!)||(p[1]!-path[i-1]![1]!)!==(path[i+1]![1]!-p[1]!));
+ for(const p of points)for(const [attribute,target,negative,positive] of [['data-self-x',p[0]!*32+16,'a','d'],['data-self-y',p[1]!*32+16,'w','s']] as const){const current=await coordinate(page,attribute);if(Math.abs(target-current)<8)continue;const direction=target>current?positive:negative;await page.keyboard.down(direction);await expect.poll(async()=>{const value=await coordinate(page,attribute);return target>current?value>=target-6:value<=target+6;},{timeout:20000,intervals:[50],message:`Walk ${direction} from ${current} to ${target} (${attribute})`}).toBe(true);await page.keyboard.up(direction);await page.waitForTimeout(120);}
+}
+
+test('balanced house: desktop/mobile explore, shared slots, furniture actions and idle budget',async({browser})=>{
+ test.setTimeout(180000);const app=fixture(true);app.paired();
+ const desktop=await browser.newContext({viewport:{width:1280,height:720}}),mobile=await browser.newContext({viewport:{width:844,height:390},isMobile:true,hasTouch:true});
+ await app.install(desktop,0);await app.install(mobile,1);const a=await desktop.newPage(),b=await mobile.newPage();await login(a,0);await login(b,1);
+ await expect(a.getByText('Connected',{exact:true})).toBeVisible();await expect(b.getByText('Connected',{exact:true})).toBeVisible();await expect(a.getByTestId('world')).toHaveAttribute('data-room','hall');
+ await a.getByRole('button',{name:'Map',exact:true}).click();await expect(a.getByRole('img',{name:'House map with player locations'})).toBeVisible();await a.getByRole('button',{name:'Map',exact:true}).click();
+ const joystick=b.getByRole('button',{name:'Move',exact:true});const box=(await joystick.boundingBox())!;const before=await coordinate(b,'data-self-y');await b.mouse.move(box.x+box.width/2,box.y+box.height/2);await b.mouse.down();await b.mouse.move(box.x+box.width/2,box.y+10);await expect.poll(()=>coordinate(b,'data-self-y')).toBeLessThan(before-20);await b.mouse.up();
+ await walkTo(a,624,992);await expect(a.getByRole('button',{name:'Play',exact:true})).toBeVisible();await a.getByRole('button',{name:'Play',exact:true}).click();await expect(a.getByText('This activity is coming in a later phase.')).toBeVisible();await expect(a.getByText('This activity is coming in a later phase.')).toBeHidden({timeout:5000});
+ await Promise.all([walkTo(a,256,1200),walkTo(b,256,1200)]);await Promise.all([a.getByRole('button',{name:'Sit',exact:true}).click(),b.getByRole('button',{name:'Sit',exact:true}).click()]);
+ // A racing loser gets authoritative busy feedback, then retries the free seat.
+ for(const page of [a,b])if(await page.getByRole('button',{name:'Sit',exact:true}).isVisible()){await expect(page.getByText('That spot is busy. Try the other spot.')).toBeVisible();await page.getByRole('button',{name:'Sit',exact:true}).click();}
+ await expect(a.getByRole('button',{name:'Leave',exact:true})).toBeVisible();await expect(b.getByRole('button',{name:'Leave',exact:true})).toBeVisible();
+ await mkdir('artifacts/phase2',{recursive:true});await a.screenshot({path:'artifacts/phase2/balanced-house-desktop.png'});await b.screenshot({path:'artifacts/phase2/balanced-house-mobile.png'});
+ await a.keyboard.press('Escape');await b.getByRole('button',{name:'Leave',exact:true}).click();await expect(a.getByRole('button',{name:'Sit',exact:true})).toBeVisible();
+ await walkTo(a,144,256);await expect(a.getByTestId('world')).toHaveAttribute('data-room','kitchen');await a.getByRole('button',{name:'Open',exact:true}).click();
+ await walkTo(a,1216,576);await expect(a.getByTestId('world')).toHaveAttribute('data-room','bedroom');await walkTo(a,1248,896);await expect(a.getByTestId('world')).toHaveAttribute('data-room','bathroom');
+ const sent=await a.getByTestId('world').getAttribute('data-sent');await a.waitForTimeout(1300);expect(await a.getByTestId('world').getAttribute('data-sent')).toBe(sent);
+ await desktop.close();await mobile.close();
+});
 
 test('signup confirmation, invalid invite, create/cancel and session persistence',async({browser})=>{
   const app=fixture();const context=await browser.newContext();await app.install(context,0);const page=await context.newPage();await page.goto('/');

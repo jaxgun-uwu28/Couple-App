@@ -1,6 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { actionResultSchema, snapshotSchema } from '@paw/shared';
-import type { HouseSnapshot } from '@paw/shared';
+import { actionResultSchema, snapshotSchema, worldStateSchema, interactionResultSchema } from '@paw/shared';
+import type { HouseSnapshot, WorldState } from '@paw/shared';
 import { snapshotCache } from './storage';
 
 const actionMessages = {
@@ -26,7 +26,7 @@ export class HouseApi {
     if (!parsed.data.ok) throw new Error(actionMessages[parsed.data.code]);
   }
   async snapshot(previous: HouseSnapshot | null): Promise<HouseSnapshot | null> {
-    const response = await this.client.rpc('get_house_snapshot', { p_since_version: previous?.version ?? 0, p_known_couple_id: previous?.couple_id ?? null });
+    const response = await this.client.rpc('get_house_snapshot_v2', { p_since_version: previous?.version ?? 0, p_known_couple_id: previous?.couple_id ?? null });
     if (response.error) throw new Error('Your home could not load. Check your connection and try again.');
     const parsed = snapshotSchema.safeParse(response.data);
     if (!parsed.success || parsed.data.user_id !== this.userId) throw new Error('Your home response could not be verified.');
@@ -38,4 +38,23 @@ export class HouseApi {
     }
     await snapshotCache.write(parsed.data,this.epoch); return parsed.data;
   }
+  async world(coupleId: string): Promise<WorldState> {
+    const response=await this.client.rpc('get_house_world');
+    const parsed=worldStateSchema.safeParse(response.data);
+    if(response.error||!parsed.success||parsed.data.couple_id!==coupleId)throw new Error('House objects could not sync. Reconnect to try again.');
+    return parsed.data;
+  }
+  async interact(action:'start'|'cancel'|'toggle'|'renew',objectId:string|null,slotId:string|null,sessionId:string,point:{x:number;y:number}):Promise<void>{
+    const intent=`world:${action}:${objectId}:${slotId}:${sessionId}`;
+    // Freeze ALL arguments across a retry, even if the avatar subsequently moved.
+    const previous=this.interactions.get(intent);
+    const args=previous??{p_action:action,p_object_id:objectId,p_slot_id:slotId,p_session_id:sessionId,p_x:point.x,p_y:point.y,p_idempotency_key:crypto.randomUUID()};
+    this.interactions.set(intent,args);
+    const response=await this.client.rpc('house_interact',args);
+    if(response.error)throw new Error('The action could not connect. Try again.');
+    const parsed=interactionResultSchema.safeParse(response.data);if(!parsed.success)throw new Error('The action response could not be verified.');
+    this.interactions.delete(intent);
+    if(!parsed.data.ok){const messages={BUSY:'That spot is busy. Try the other spot.',OUT_OF_RANGE:'Move closer to interact.',UNAVAILABLE:'This activity is coming in a later phase.',ALREADY_USING:'Leave your current activity first.',NOT_OWNER:'That activity ended. Try again.'};throw new Error(messages[parsed.data.code as keyof typeof messages]??'That action is unavailable. Reconnect to check your home.');}
+  }
+  private interactions=new Map<string,{p_action:string;p_object_id:string|null;p_slot_id:string|null;p_session_id:string;p_x:number;p_y:number;p_idempotency_key:string}>();
 }

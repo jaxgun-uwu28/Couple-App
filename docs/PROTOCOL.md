@@ -2,6 +2,22 @@
 
 Document every Realtime Broadcast event and every RPC here, in the same change that adds it.
 
+## Phase 2 world contracts (local implementation; hosted verification pending)
+
+`cottage-v1` uses layout version 2, 2048×1408 geometry, 120px/s feet collision, five named room IDs and existing motion events/smoothing. `PLAYER_ROOM_CHANGED` carries the same validated full motion frame. Phase 1 geometry remains available for old snapshots/tests. Phase 2 Presence advertises `app_version: phase2`; versioned private channel `house:<couple_id>:cottage-v1` separates incompatible maps. Membership policies must authorize this exact suffix as well as the existing channel; no arbitrary topics.
+
+Implemented by `20261003000100_phase2_house_world.sql`:
+
+| RPC | Args | Contract |
+|---|---|---|
+| `get_house_snapshot_v2` | Same args as original snapshot | Always returns full own account snapshot with `cottage-v1` / layout 2, or own `none`. The original RPC remains unchanged for old APKs. Cache schema 2 excludes prior layout caches; World remounts if map changes. |
+| `get_house_world` | None | Caller-derived couple UUID, ISO server time, `{object_id,enabled}[]` states and `{object_id,slot_id,user_id,session_id,expires_at}[]` unexpired slots. No supplied couple ID. Strict client schema permits at most 32 toggles and two player slots. |
+| `house_interact` | `p_action: start\|cancel\|toggle\|renew`, nullable `p_object_id/p_slot_id`, UUID `p_session_id/p_idempotency_key`, finite `p_x/p_y` | Caller-bound; serialized per user/request/house. Validates catalog proximity, slot IDs and atomic occupancy. Start is one slot per player; cancellation/renewal require matching caller AND session. Toggles only fridge/lamp/TV/toilet. Other activities return UNAVAILABLE; no games/cooking/customization. Position hints are peer-trusted gameplay-only, never economy/security authority. Duplicate complete argument sets return the same result; altered arguments/key reuse returns REQUEST_CONFLICT. |
+
+Actions return `{ok:true,couple_id}` or `{ok:false,code,couple_id?}`. Codes: REQUEST_CONFLICT, NO_HOUSE, INVALID_ACTION, INVALID_OBJECT, OUT_OF_RANGE, UNAVAILABLE, INVALID_SLOT, BUSY, ALREADY_USING, NOT_OWNER. Anonymous execute and client table writes are denied; all three new tables have RLS. Catalog is global public map metadata readable by authenticated users; couple states/slots require membership.
+
+Slots expire after 90 seconds; active connected seated/lying clients renew every 30 seconds, and background/Leave/movement/Escape/disposal release their own session best effort. Reconnect refreshes authoritative state. Ordinary standing idle players send no movement/object events or polling. `object_changed` strict payload contains only UUID `couple_id,user_id,session_id,request_id`; it is sent after successful start/cancel/toggle, never a state write. Receivers bind membership/current Presence session, suppress 128 duplicate IDs and coalesce refresh hints at two reads/s; recovery always reads server state even if a hint was lost. Slot renewal is RPC-only and does not add motion events. Object-state leases use server time adjusted locally; expired slots disappear without idle polling.
+
 ## Phase 1 RPC contracts
 
 Implemented only by `20261002000200_phase1_accounts_and_house.sql`; apply after the Phase 0 foundation. Anonymous execute is revoked. All write functions bind the caller via `auth.uid()`, use an empty search path and serialize caller/request-key operations; no client table writes. RLS is enabled on profiles, houses, processed_actions and invite_attempts as well as existing tables. Profiles are created by an Auth trigger; initial name is trimmed/bounded to 24 characters, timezone validated. Existing memberships/IDs are preserved and backfilled.
