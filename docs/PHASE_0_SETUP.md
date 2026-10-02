@@ -54,7 +54,7 @@ cd apps/web/android
 .\gradlew.bat assembleDebug
 ```
 
-Output: `apps/web/android/app/build/outputs/apk/debug/app-debug.apk`. Debug-signed, landscape activity; not a production release. Install by sideloading on the test phone. GitHub's manual `Phase 0 debug APK` workflow can also build it and retain the artifact for three days.
+Output: `apps/web/android/app/build/outputs/apk/debug/app-debug.apk`. Debug-signed, landscape activity; not a production release. Install by sideloading on the test phone. GitHub's `Phase 0 debug APK` workflow builds on relevant main changes or manual dispatch and retains the artifact for three days. A verified build is locally available at ignored `artifacts/phase0/PawAndUs-phase0-debug.apk`; checksum and build-run link are in PHASE_0_STATUS.md. The CI APK starts with the public setup form, so enter the project's public URL/key before signing in with a provisioned test account.
 
 ## Keepalive and quotas
 
