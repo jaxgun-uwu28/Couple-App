@@ -20,6 +20,16 @@ Log every architecture or scope decision here (date, decision, reason, alternati
 
 ## Decisions made
 
+### 2026-10-02 — Continue with hosted Phase 0 deployment
+
+User asked to start the next step after connecting Supabase. Continue within Phase 0 by importing the existing public GitHub repository into the authenticated personal Vercel Hobby account, using the repository root and tracked `vercel.json`. Configure only the supplied public project URL/publishable key as VITE build variables. Verify the hosted canvas and health connection; do not begin Phase 1 or change approved visuals. Preserve free plan defaults and use a `vercel.app` subdomain. Dashboard-applied foundation SQL must be recorded as applied with the official CLI migration repair command before any future `db push`; do not replay or reset the hosted migration.
+
+The health workflow may read the existing public key from a repository variable when its optional secret is absent. This key is already distributed in the web bundle and carries only anon/authenticated client permissions; no new credential or administrator access is created. Preserve secret-first compatibility, configure the two public variables through existing repository access, and verify a manual run. This avoids adding an encryption library solely to store public configuration.
+
+### 2026-10-02 — Hosted Supabase setup resumed
+
+User explicitly authorized configuring the existing `ncopulzhlthauttyrvgo` project and completed dashboard sign-in. This supersedes the prior Supabase access deferral; Vercel and real Android-device verification remain separate outstanding work. Apply only the tracked Phase 0 foundation after inspecting the schema, never reset or overwrite unrelated tables/data. Verify hosted RLS/RPC using rollback-only fixtures and restrict Realtime to private channels. Use the authenticated dashboard for administrative SQL/settings; the supplied publishable key remains client-only public configuration. No secret-key extraction, new credentials, paid services or Phase 1 features.
+
 ### 2026-10-02 — Approved references; Phase 0 infrastructure plan
 
 User's "looks good proceed" approves the remaining home/UI references and continuation within Phase 0, including step 16. This supersedes earlier scope deferrals. No gameplay, pairing flow, production HUD, movement, pet systems or Phase 1 features.

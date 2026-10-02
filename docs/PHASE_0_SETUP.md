@@ -22,6 +22,8 @@ Browser checks: `pnpm exec playwright install chromium`, then `pnpm test:e2e`. O
 
 Use an existing dedicated Free project, with no payment method or upgrade. Inspect its existing schema before applying the migration; never reset a hosted database. For a fresh project, apply the tracked migration through the CLI (`supabase link --project-ref <ref>` then `supabase db push`) or paste its exact content into the SQL editor. Administrative credentials stay in local CLI storage or dashboard, never this repo. No dashboard-only schema edits.
 
+The existing `ncopulzhlthauttyrvgo` project was inspected and the exact `20261002000100_phase0_foundation.sql` migration applied through the dashboard on 2026-10-02. **Do not run that migration again.** The dashboard does not populate CLI migration history. Before the first future CLI push, authenticate locally, link this project, run `supabase migration repair 20261002000100 --status applied`, and confirm `supabase migration list` agrees with the tracked file. This repairs history only; never use a hosted reset. See the [official migration repair reference](https://supabase.com/docs/reference/cli/supabase-migration-repair).
+
 Disable **Allow public access** under Realtime settings. Keep signup disabled for this spike; create two test users through Auth's administrator UI, and assign them seats 1 and 2 in one admin-created couple. Use an additional unrelated couple to test isolation. The spike does not provide a membership-writing client or pairing RPC.
 
 Admin-only provisioning example, replacing placeholders with the test users' UUIDs (no passwords):
@@ -38,9 +40,13 @@ select 'SECOND_TEST_USER_UUID'::uuid, id, 2 from new_couple;
 
 Local DB testing requires Docker and the Supabase CLI: `supabase start`, then `supabase test db`. CI performs this on a standard Linux runner. Tests roll back synthetic fixtures. Hosted migration/Realtime settings and actual channel authorization need their own recorded verification.
 
+For the dashboard, run `node scripts/prepare-hosted-db-test.mjs` and paste the generated ignored `.cache/phase0-hosted-rls.sql` into a **cleared** SQL editor. The wrapper makes each failing pgTAP assertion raise a SQL error, since the dashboard only displays one result grid. It preserves all 17 assertions and the final rollback. Confirm no errors, then verify fixture counts return to their pre-test values. The hosted run passed with zero remaining users/couples/members. This does not prove a real WebSocket exchange.
+
 ## Vercel Hobby
 
 Import `jaxgun-uwu28/Couple-App` into the existing personal Hobby account. Repository root is the project root; `vercel.json` builds `apps/web` and serves its dist directory with SPA fallback. Use the included `*.vercel.app` subdomain. Optionally configure the two public VITE variables; the runtime form also works. Never use paid compute or a custom domain. Test the actual deployed canvas after deployment.
+
+Live Phase 0 build: [couple-app-web-two.vercel.app](https://couple-app-web-two.vercel.app), project `couple-app-web` in the existing Lance Hobby account. Root `./`; Vite/build/output read from tracked `vercel.json`. Production and preview have the supplied public `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` values. No administrative key is configured. The canvas, landscape sizing, 44px buttons and SPA fallback were verified; the account form is temporary infrastructure diagnostics.
 
 ## Android debug APK
 
@@ -58,7 +64,7 @@ Output: `apps/web/android/app/build/outputs/apk/debug/app-debug.apk`. Debug-sign
 
 ## Keepalive and quotas
 
-In GitHub Actions configuration set repository variable `SUPABASE_URL` and secret `SUPABASE_ANON_KEY` to the **public** key. The scheduled workflow calls read-only `health` approximately every three days; delayed/disabled workflows or failed requests can still permit pausing. No private DB credentials. Standard hosted Linux runners, no large-runner usage, no paid overage. Supabase SDK heartbeats/token refresh are transport overhead; the application sends no automated ping traffic.
+In GitHub Actions configuration set repository variable `SUPABASE_URL` and variable or optional secret `SUPABASE_ANON_KEY` to the **public** key. Secret takes precedence if both exist. The two public repository variables are configured. The scheduled workflow calls read-only `health` approximately every three days; delayed/disabled workflows or failed requests can still permit pausing. No private DB credentials. Standard hosted Linux runners, no large-runner usage, no paid overage. Supabase SDK heartbeats/token refresh are transport overhead; the application sends no automated ping traffic.
 
 ## Required live evidence before Phase 0 completion
 

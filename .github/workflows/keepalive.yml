@@ -13,10 +13,10 @@ jobs:
       - name: Call public read-only health RPC
         env:
           PROJECT_URL: ${{ vars.SUPABASE_URL }}
-          PUBLIC_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          PUBLIC_KEY: ${{ secrets.SUPABASE_ANON_KEY || vars.SUPABASE_ANON_KEY }}
         run: |
           if [ -z "$PROJECT_URL" ] || [ -z "$PUBLIC_KEY" ]; then
-            echo "Configure SUPABASE_URL variable and public SUPABASE_ANON_KEY secret first."
+            echo "Configure SUPABASE_URL variable and public SUPABASE_ANON_KEY variable or secret first."
             exit 1
           fi
           curl --fail --silent --show-error --max-time 30 \
