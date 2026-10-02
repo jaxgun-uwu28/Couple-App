@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test';
 test('landscape phone can swipe over the canvas to reach setup controls', async ({ browser }) => {
   const context = await browser.newContext({ viewport: { width: 844, height: 390 }, hasTouch: true, isMobile: true });
   const page = await context.newPage();
-  await page.goto('/');
+  await page.goto('/?probe=1');
   await expect(page.locator('canvas')).toBeVisible();
   const input = await context.newCDPSession(page);
   // A real touch gesture, before any locator action that would auto-scroll.
@@ -58,7 +58,7 @@ test('a recovered private channel replaces the initial join error', async ({ pag
       } else if (event === 'heartbeat' || event === 'phx_leave') reply('ok', {});
     });
   });
-  await page.goto('/');
+  await page.goto('/?probe=1');
   await page.getByLabel('Project URL').fill('https://phase0-test.supabase.co');
   await page.getByLabel('Public key').fill('sb_publishable_public-test-value');
   await page.getByRole('button', { name: 'Save project' }).click();
@@ -81,7 +81,7 @@ for (const viewport of [{ width: 1280, height: 800 }, { width: 844, height: 390 
     const page = await context.newPage();
     const errors: string[] = [];
     page.on('pageerror', error => errors.push(error.message));
-    await page.goto('/');
+    await page.goto('/?probe=1');
     await expect(page.locator('canvas')).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Connect the free project' })).toBeVisible();
     await page.getByLabel('Project URL').fill('https://test.supabase.co');
@@ -99,7 +99,7 @@ test('two separate sessions have isolated public setup and usable disconnect/err
   const second = await browser.newContext();
   const a = await first.newPage();
   const b = await second.newPage();
-  await Promise.all([a.goto('/'), b.goto('/')]);
+  await Promise.all([a.goto('/?probe=1'), b.goto('/?probe=1')]);
   await a.getByLabel('Project URL').fill('https://phase0-test.supabase.co');
   await a.getByLabel('Public key').fill('sb_publishable_public-test-value');
   await a.getByRole('button', { name: 'Save project' }).click();

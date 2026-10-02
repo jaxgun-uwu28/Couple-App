@@ -23,6 +23,8 @@ export interface BackendApi {
   isCoupleMember(coupleId: string): Promise<boolean>;
 }
 
+export * from './house';
+
 // An ephemeral probe: never queued offline or used to authorize persistent state.
 export class PingWindow {
   private readonly seen = new Set<string>();

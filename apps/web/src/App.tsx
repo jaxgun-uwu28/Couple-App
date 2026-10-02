@@ -1,132 +1,92 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import type { FormEvent } from 'react';
-import { Capacitor } from '@capacitor/core';
-import { getClient } from './infra/client';
-import { PingWindow } from '@paw/shared';
-import type { ConnectionState, SpikePing } from '@paw/shared';
-import { Canvas } from './Canvas';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
+import type { Session, SupabaseClient } from '@supabase/supabase-js';
+import type { HouseSnapshot } from '@paw/shared';
 import { initialConfig, publicConfigSchema } from './infra/config';
 import type { PublicConfig } from './infra/config';
-import { SupabaseTransport } from './infra/SupabaseTransport';
+import { getClient } from './infra/client';
+import { HouseApi } from './infra/HouseApi';
+import { snapshotCache } from './infra/storage';
+import { publicWebUrl, readInvite } from './infra/lifecycle';
+const World = lazy(() => import('./game/World'));
+const Probe = lazy(() => import('./diagnostics/Phase0Probe').then(module => ({ default: module.Phase0Probe })));
 
 export function App() {
-  const [config, setConfig] = useState<PublicConfig | null>(initialConfig);
-  const [configError, setConfigError] = useState('');
-  const configure = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const data = new FormData(event.currentTarget);
-    const parsed = publicConfigSchema.safeParse({ url: data.get('url'), key: data.get('key') });
-    if (!parsed.success) { setConfigError(parsed.error.issues[0]?.message ?? 'Check the project settings.'); return; }
-    try { localStorage.setItem('paw-phase0-public-config', JSON.stringify(parsed.data)); } catch { /* Storage is optional. */ }
-    setConfigError(''); setConfig(parsed.data);
-  };
-  return <main>
-    <header><h1>Paw &amp; Us</h1><p>Phase 0 · Infrastructure test</p></header>
-    <Canvas />
-    <p className="note">This is the test canvas. The approved house and gameplay will be built in later phases.</p>
-    {config ? <Probe config={config} onReset={() => {
-      try { localStorage.removeItem('paw-phase0-public-config'); } catch { /* Optional storage. */ }
-      setConfig(null);
-    }} /> : <section aria-labelledby="setup-title">
-      <h2 id="setup-title">Connect the free project</h2>
-      <p>Use the public Supabase URL and anon or publishable key. Never enter a secret key.</p>
-      <form onSubmit={configure}>
-        <label>Project URL<input name="url" type="url" required placeholder="https://your-project.supabase.co" /></label>
-        <label>Public key<input name="key" required autoComplete="off" /></label>
-        <button>Save project</button>
-      </form>
-      {configError && <p role="alert">{configError}</p>}
-    </section>}
-  </main>;
+  const [config, setConfig] = useState(initialConfig);
+  if (new URLSearchParams(location.search).has('probe')) return <Suspense fallback={<p>Loading…</p>}><Probe /></Suspense>;
+  return config ? <ConnectedApp config={config} /> : <Setup onReady={setConfig} />;
 }
-
-function Probe({ config, onReset }: { config: PublicConfig; onReset: () => void }) {
+function Setup({ onReady }: { onReady: (config: PublicConfig) => void }) {
+  const [error, setError] = useState('');
+  return <main className="account-page"><section className="account-card"><h1>Paw & Us</h1><p>Connect your home.</p><form onSubmit={event => {
+    event.preventDefault(); const values = new FormData(event.currentTarget);
+    const parsed = publicConfigSchema.safeParse({ url: values.get('url'), key: values.get('key') });
+    if (!parsed.success) { setError('Use your HTTPS Supabase URL and public publishable key.'); return; }
+    try { localStorage.setItem('paw-phase0-public-config', JSON.stringify(parsed.data)); } catch { /* Session only. */ }
+    onReady(parsed.data);
+  }}><label>Project URL<input name="url" type="url" required /></label><label>Public API key<input name="key" required /></label><button>Connect</button></form><p role="alert">{error}</p></section></main>;
+}
+function ConnectedApp({ config }: { config: PublicConfig }) {
   const client = useMemo(() => getClient(config), [config]);
-  const transport = useMemo(() => new SupabaseTransport(client), [client]);
-  const window = useRef(new PingWindow());
-  const [state, setState] = useState<ConnectionState>('offline');
-  const [busy, setBusy] = useState(false);
-  const [message, setMessage] = useState('Sign in with an administrator-provisioned Phase 0 test account.');
-  const [pings, setPings] = useState<SpikePing[]>([]);
-  const [sent, setSent] = useState(0);
+  const [session, setSession] = useState<Session | null>(null);
+  const [loading, setLoading] = useState(true);
   useEffect(() => {
-    client.auth.startAutoRefresh();
-    const stopState = transport.onState(next => {
-      setState(next);
-      if (next === 'connecting') setMessage('Connecting to your private couple channel…');
-      else if (next === 'connected') setMessage('Connected to your private couple channel. Open this build on the other device and send a ping.');
-      else if (next === 'error') setMessage('Connection interrupted. Reconnect if it does not recover.');
-    });
-    const stopPing = transport.onEvent('spike_ping', payload => {
-      const ping = window.current.accept(payload);
-      if (ping) setPings(previous => [ping, ...previous].slice(0, 20));
-    });
-    const { data: { subscription } } = client.auth.onAuthStateChange((event, session) => {
-      if (event === 'TOKEN_REFRESHED' && session) void client.realtime.setAuth(session.access_token).catch(() => setMessage('Session refresh failed. Reconnect.'));
-      if (event === 'SIGNED_OUT') void transport.disconnect();
-    });
-    return () => { stopState(); stopPing(); subscription.unsubscribe(); void transport.disconnect(); client.auth.stopAutoRefresh(); };
-  }, [client, transport]);
-  const run = async (task: () => Promise<void>) => {
-    setBusy(true);
-    try { await task(); } catch (error) { setMessage(error instanceof Error ? error.message : 'Something went wrong. Try again.'); }
+    let cancelled = false;
+    const { data } = client.auth.onAuthStateChange((_event, value) => { if (!cancelled) { if(!value)void snapshotCache.clear();setSession(value); setLoading(false); } });
+    void client.auth.getSession().then(({ data, error }) => { if (!cancelled) { setSession(error ? null : data.session); setLoading(false); } });
+    return () => { cancelled = true; data.subscription.unsubscribe(); };
+  }, [client]);
+  if (loading) return <main className="account-page"><p role="status">Opening your home…</p></main>;
+  return session ? <Home key={session.user.id} client={client} userId={session.user.id} /> : <Auth client={client} />;
+}
+function Auth({ client }: { client: SupabaseClient }) {
+  const [register, setRegister] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState('');
+  return <main className="account-page"><section className="account-card"><span className="brand-paw" aria-hidden="true">♡</span><h1>Paw & Us</h1><p>A little home for the two of you.</p><h2>{register ? 'Create account' : 'Welcome home'}</h2><form onSubmit={async event => {
+    event.preventDefault(); if (busy) return; const values = new FormData(event.currentTarget); setBusy(true); setMessage('');
+    try {
+      const email = String(values.get('email')).trim(); const password = String(values.get('password'));
+      const response = register ? await client.auth.signUp({ email, password, options: { data: { display_name: String(values.get('name')).trim() }, emailRedirectTo: `${publicWebUrl}/` } }) : await client.auth.signInWithPassword({ email, password });
+      if (response.error) throw response.error;
+      if (register && !response.data.session) setMessage('Check your email to confirm your account, then sign in.');
+    } catch (error) { setMessage(error instanceof Error ? error.message : 'Could not sign in. Try again.'); }
+    finally { setBusy(false); }
+  }}>{register && <label>Name<input name="name" maxLength={24} required autoComplete="nickname" /></label>}<label>Email<input name="email" type="email" required autoComplete="email" /></label><label>Password<input name="password" type="password" required minLength={6} autoComplete={register ? 'new-password' : 'current-password'} /></label><button disabled={busy}>{busy ? 'Please wait…' : register ? 'Create account' : 'Sign in'}</button></form><p role="status">{message}</p><button className="quiet" disabled={busy} onClick={() => { setRegister(!register); setMessage(''); }}>{register ? 'Back to sign in' : 'Create account'}</button></section></main>;
+}
+function Home({ client, userId }: { client: SupabaseClient; userId: string }) {
+  const api = useMemo(() => new HouseApi(client, userId, snapshotCache.activate(userId)), [client, userId]);
+  const [snapshot, setSnapshot] = useState<HouseSnapshot | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [verified, setVerified] = useState(false);
+  const [playing, setPlaying] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const [code, setCode] = useState(() => readInvite(location.href));
+  const refresh = useCallback(async () => { const next = await api.snapshot(null); setSnapshot(next); setVerified(true); return next; }, [api]);
+  useEffect(() => {
+    let cancelled = false;
+    const epoch = snapshotCache.activate(userId);
+    void (async () => {
+      const cached = await snapshotCache.read(userId, epoch);
+      if (!cancelled && cached) {setSnapshot(cached);setPlaying(true);}
+      try { const next = await api.snapshot(cached); if (!cancelled) { setSnapshot(next); setVerified(true); setPlaying(next?.status === 'active'); } }
+      catch (error) { if (!cancelled) setError(error instanceof Error ? error.message : 'Could not load your home.'); }
+      finally { if (!cancelled) setLoading(false); }
+    })();
+    return () => { cancelled = true; };
+  }, [api, userId]);
+  useEffect(() => {
+    if (playing || !verified || snapshot?.status !== 'pending') return;
+    const timer = setInterval(() => { if (!document.hidden) void refresh().catch(() => undefined); }, 8000);
+    return () => clearInterval(timer);
+  }, [playing, verified, snapshot?.status, refresh]);
+  const logout = async () => { setPlaying(false); setSnapshot(null); setVerified(false); await snapshotCache.clear(); const { error } = await client.auth.signOut(); if (error) setError('Could not sign out. Reconnect and try again.'); };
+  const action = async (name: Parameters<HouseApi['action']>[0]) => {
+    if (busy || !verified) return; setBusy(true); setError('');
+    try { await api.action(name, code); await refresh(); if (name === 'join_couple') { history.replaceState(null, '', location.pathname); setPlaying(true); } }
+    catch (error) { setError(error instanceof Error ? error.message : 'Could not update your home.'); }
     finally { setBusy(false); }
   };
-  const connect = async () => {
-    await transport.connect();
-    const { data: { user } } = await client.auth.getUser();
-    if (!user) throw new Error('Sign in again.');
-    const { data, error } = await client.from('couple_members').select('couple_id').eq('user_id', user.id).maybeSingle();
-    if (error) throw new Error('Membership could not load. Check the migration.');
-    if (!data) throw new Error('No couple membership. An administrator must provision the test pair.');
-    await transport.join(String(data.couple_id));
-    setMessage('Connected to your private couple channel. Open this build on the other device and send a ping.');
-  };
-  const signIn = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const data = new FormData(event.currentTarget);
-    const email = String(data.get('email'));
-    const password = String(data.get('password'));
-    event.currentTarget.reset();
-    void run(async () => {
-      await transport.disconnect(); setPings([]); setSent(0); window.current = new PingWindow();
-      const { error } = await client.auth.signInWithPassword({ email, password });
-      if (error) throw new Error('Sign in failed. Check the test account email and password.');
-      await connect();
-    });
-  };
-  return <section aria-labelledby="ping-title">
-    <h2 id="ping-title">Private Realtime ping</h2>
-    <p role="status">Connection: {state}</p>
-    <form onSubmit={signIn}>
-      <label>Test account email<input name="email" type="email" autoComplete="username" required /></label>
-      <label>Password<input name="password" type="password" autoComplete="current-password" required /></label>
-      <button disabled={busy}>Sign in and connect</button>
-    </form>
-    <div className="actions">
-      <button disabled={busy || state !== 'connected'} onClick={() => void run(async () => {
-        if (document.hidden) throw new Error('Return to the app before sending.');
-        if (!window.current.claimSend(performance.now())) throw new Error('Wait a second before sending again.');
-        const { data: { user } } = await client.auth.getUser();
-        if (!user) throw new Error('Sign in again.');
-        await transport.broadcast('spike_ping', {
-          id: crypto.randomUUID(), sender_id: user.id,
-          device: Capacitor.isNativePlatform() ? 'android' : 'web', sent_at: new Date().toISOString(),
-        });
-        setSent(previous => previous + 1); setMessage('Ping sent. Check the other device for receipt.');
-      })}>Send ping</button>
-      <button disabled={busy} onClick={() => void run(connect)}>Reconnect</button>
-      <button disabled={busy} onClick={() => void run(async () => { await transport.disconnect(); setMessage('Disconnected. Reconnect to send again.'); })}>Disconnect</button>
-      <button disabled={busy} onClick={() => void run(async () => {
-        await transport.disconnect();
-        const { error } = await client.auth.signOut({ scope: 'local' });
-        if (error) throw new Error('Sign out failed. Try Clear setup again.');
-        setPings([]); setSent(0); onReset();
-      })}>Clear setup</button>
-    </div>
-    <p role="status">{message}</p>
-    <p>Sent: {sent} · Received: {pings.length} (last 20)</p>
-    {pings.length === 0 ? <p>No pings received yet.</p> : <ul aria-label="Received pings">{pings.map(ping => <li key={ping.id}>From {ping.device} · {ping.sent_at} · {ping.id}</li>)}</ul>}
-    <p className="note">Manual pings only. No gameplay messages while idle. Receipt on both real devices is still required to complete Phase 0.</p>
-  </section>;
+  if (playing && snapshot) return <Suspense fallback={<main className="account-page"><p>Opening Home…</p></main>}><World client={client} api={api} snapshot={snapshot} onSnapshot={value=>{setSnapshot(value);setVerified(true);}} onBack={() => setPlaying(false)} onLogout={logout} /></Suspense>;
+  return <main className="account-page"><section className="account-card"><h1>Paw & Us</h1><p>Your home starts with the two of you.</p>{loading ? <p role="status">Opening your home…</p> : !verified ? <><p>Your saved home is read-only until it reconnects.</p><button onClick={() => { setBusy(true); void refresh().catch(error => setError(error.message)).finally(() => setBusy(false)); }} disabled={busy}>Reconnect</button></> : !snapshot ? <><h2>Make a home together</h2><button disabled={busy} onClick={() => void action('create_couple')}>Create couple</button><p>Have an invite from your partner?</p><form onSubmit={event => { event.preventDefault(); void action('join_couple'); }}><label>Invite code<input value={code} onChange={event => setCode(event.target.value.toUpperCase())} maxLength={12} autoComplete="off" required /></label><button disabled={busy}>Join</button></form></> : <><h2>{snapshot.status === 'active' ? 'Your home is ready' : 'Invite your partner'}</h2>{snapshot.invite && <><p className="invite-code">{snapshot.invite.code}</p><p>Use once before {new Date(snapshot.invite.expires_at).toLocaleDateString()}.</p><button onClick={() => { void navigator.clipboard?.writeText(`${publicWebUrl}/?invite=${snapshot.invite!.code}`).then(() => setError('Invite link copied.')).catch(() => setError('Copy the invite code above.')); }}>Copy invite link</button></>}{snapshot.status === 'pending' && <button className="quiet" disabled={busy} onClick={() => void action('refresh_invite')}>New invite</button>}<button disabled={busy} onClick={() => setPlaying(true)}>Home</button>{snapshot.status === 'pending' && <button className="quiet" disabled={busy} onClick={() => { if (confirm('Cancel this home and its unused invite?')) void action('cancel_pending_couple'); }}>Cancel invite</button>}</>}<p role="status">{error}</p><button className="quiet" onClick={() => void logout()}>Sign out</button></section></main>;
 }

@@ -1,7 +1,7 @@
 :root { font-family: ui-rounded, "Nunito", system-ui, sans-serif; color: #342e39; background: #f8f0f2; font-synthesis: none; }
 * { box-sizing: border-box; }
 body { margin: 0; }
-main { max-width: 1000px; margin: auto; padding: max(18px, env(safe-area-inset-top)) max(18px, env(safe-area-inset-right)) max(18px, env(safe-area-inset-bottom)) max(18px, env(safe-area-inset-left)); }
+.probe-root { max-width: 1000px; margin: auto; padding: max(18px, env(safe-area-inset-top)) max(18px, env(safe-area-inset-right)) max(18px, env(safe-area-inset-bottom)) max(18px, env(safe-area-inset-left)); }
 h1 { margin-bottom: 0; } h2 { font-size: 1.25rem; }
 header p { margin-top: 6px; }
 .canvas { position: relative; width: 100%; max-width: calc(55vh * 16 / 9); max-width: calc(55svh * 16 / 9); margin-inline: auto; aspect-ratio: 16 / 9; overflow: hidden; touch-action: pan-y; }
@@ -19,3 +19,34 @@ button:disabled { opacity: .55; cursor: default; }
 [role="alert"] { color: #a03b53; }
 li { overflow-wrap: anywhere; padding-block: 4px; }
 @media (max-width: 500px) { section { padding: 14px; } form button { width: 100%; } }
+.account-page { min-height: 100svh; display: grid; place-items: center; padding: 24px; touch-action: pan-y; background: radial-gradient(ellipse at top, #fff9fa, #f1e0e6); }
+.account-card { width: min(100%, 420px); box-shadow: 0 18px 70px #9b71821a; padding: 28px; text-align: center; }
+.account-card form { display: grid; text-align: left; }
+.account-card button { margin: 6px 3px; }
+.account-card form button { margin: 4px 0; }
+.brand-paw { font-size: 44px; color: #b96887; }
+.quiet { background: #fff9fa; border-color: #ddc9d1; }
+.invite-code { font-size: 26px; letter-spacing: 4px; font-weight: 700; }
+.world { position: fixed; inset: 0; width: 100%; height: 100%; padding: 0; margin: 0; overflow: hidden; touch-action: none; }
+.world-canvas { position: absolute; inset: 0; }
+.world-canvas canvas { display: block; touch-action: none; }
+.settings-icon { position: absolute; left: max(18px, env(safe-area-inset-left)); top: max(18px, env(safe-area-inset-top)); width: 48px; height: 48px; border-radius: 50%; background: #fff9faed; font-size: 24px; padding: 0; box-shadow: 0 3px 10px #69485a18; }
+.connection { position: absolute; left: max(18px, env(safe-area-inset-left)); top: max(78px, calc(env(safe-area-inset-top) + 60px)); font-size: 12px; color: #75606d; pointer-events: none; }
+.connection::before { content: ''; display: inline-block; width: 7px; height: 7px; margin-right: 5px; border-radius: 50%; background: #c38c82; }
+.connection.connected::before { background: #668b78; }
+.joystick { position: absolute; left: max(24px, env(safe-area-inset-left)); bottom: max(24px, env(safe-area-inset-bottom)); border: 2px solid #fff9faa6; background: #9bbbd04d; border-radius: 50%; display: grid; place-items: center; user-select: none; touch-action: none; }
+.joystick span { width: 44px; height: 44px; border-radius: 50%; background: #fff9fad9; border: 2px solid #9bbbd0; pointer-events: none; }
+.interact { position: absolute; right: max(24px, env(safe-area-inset-right)); bottom: max(35px, env(safe-area-inset-bottom)); height: 58px; padding-inline: 24px; border-radius: 30px; box-shadow: 0 4px 14px #79576722; }
+.world-message { position: absolute; bottom: max(22px, env(safe-area-inset-bottom)); left: 170px; right: 175px; text-align: center; font-size: 13px; pointer-events: none; color: #69525f; }
+.world-message button { pointer-events: auto; }
+.reconnect { position: absolute; left: 80px; top: 22px; }
+.partner-cue { position: absolute; right: 22px; top: 24px; display: flex; align-items: center; gap: 12px; font-size: 13px; color: #75606d; }
+.partner-cue span { font-size: 28px; display: block; }
+.modal-backdrop { position: absolute; inset: 0; background: #493d474d; display: grid; place-items: center; padding: 16px; touch-action: pan-y; }
+.settings-dialog { width: min(100%, 440px); max-height: 90svh; overflow: auto; box-shadow: 0 16px 60px #493d4726; }
+.settings-dialog label { display: flex; align-items: center; margin-block: 14px; }
+.settings-dialog input { width: 22px; min-height: 22px; margin-right: 10px; }
+select { min-height: 44px; border-radius: 10px; border: 1px solid #796470; padding: 8px; font: inherit; background: #fff; }
+.rotate-hint { display: none; }
+@media (orientation: portrait) and (max-width: 600px) { .rotate-hint { position: absolute; top: 120px; left: 18px; right: 18px; display: flex; align-items: center; gap: 12px; background: #fff9fae6; border-radius: 14px; padding: 12px; font-size: 13px; } .world-message { left: 18px; right: 18px; bottom: 170px; } }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; } }

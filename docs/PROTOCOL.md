@@ -17,6 +17,26 @@ Implemented only by `20261002000200_phase1_accounts_and_house.sql`; apply after 
 Write replay is retained seven days in a caller-scoped, client-inaccessible ledger. Same key/action/normalized args returns the original JSON; changing action/args or replaying another user's key returns `REQUEST_CONFLICT` without private data. Rate-limit failures are not added to the ledger. Null request keys/negative or null snapshot versions raise `22023`; null Auth raises `42501`. Invalid UUID arguments use PostgreSQL `22P02`. Deferred constraints require pending=one member, active=two and archived=zero at transaction commit; unique user and seats remain enforced. No persistent position write or offline pairing replay.
 
 ## Broadcast events (Tier 3, ephemeral)
+
+### Phase 1 house transport
+
+`HouseRealtimeTransport` isolates typed player messages and Presence from Phaser. The Phase 0 adapter remains available only at `?probe=1`. Both use private `house:<couple_id>` authorization; Phase 1 extends the existing policy to Broadcast and Presence. No Postgres Changes or persistent position writes.
+
+| Event | Payload | Sender and limit |
+|---|---|---|
+| `PLAYER_JOINED`, `PLAYER_LEFT` | `motionSchema` | Active member/device on entry/exit; no periodic sends. |
+| `PLAYER_MOVED`, `PLAYER_STOPPED`, `PLAYER_ANIMATION_CHANGED` | `motionSchema` | Active foreground device; direction/animation/velocity change plus one correction/second while moving, combined hard cap ten motion packets/rolling second. Nothing while idle/backgrounded. |
+| `PLAYER_ROOM_CHANGED` | `motionSchema` | Reserved room-transition contract; Phase 1 has one collision test room and produces no room transitions. |
+| `sync_request` | UUID `request_id`, `user_id`, `session_id` | Join/recover/Presence-session change. Last eight request IDs retained, no idle polling. |
+| `sync_response` | UUID `request_id`, `to_session`, `player: motionSchema` | Active foreground member/device; at most one response/user/second. Only matching outstanding requests accepted. |
+
+All Broadcast schemas are strict. Motion has UUID `user_id/couple_id/session_id`, nonnegative safe-integer `seq`, finite `x/y/vx/vy`, `direction: up|down|left|right`, `animation: idle|walk`, `room: phase1-room`. These are peer claims, never authorization. Receivers require current own-couple membership and the preferred Presence session; ignore stale/duplicate sequence values, clamp bounds and velocity to 170px/s, bound ordinary corrections to elapsed speed +48px, and enforce collision during interpolation/extrapolation. Requested initial sync can seed a distant valid position; it does not grant persistent authority. Extrapolation stops after 1.4 seconds without correction.
+
+Presence payload (`presenceSchema`, strips SDK metadata): UUID `user_id/session_id`, ISO offset `joined_at`, room, `status: online|away`, `device: web|android`, `app_version: phase1`. Newest server snapshot time wins device ownership; UUID breaks equal timestamps. Losing device stops input and offers Play here; devices do not automatically reclaim control. Avatar map keys are user IDs. Absence fades partner for 30 seconds then removes it; away stops extrapolation. Foreground/re-subscribe fetches authoritative snapshot, re-tracks Presence and requests live positions. Channel cleanup is serialized per SDK client to prevent StrictMode/reconnect reuse of a channel pending removal.
+
+Every snapshot variant includes ISO `server_time`, used to order device sessions without trusting client wall clocks. Cache uses `user_id:couple_id:schema_version`, strict snapshot validation, IndexedDB with in-memory fallback, and invalidates outstanding writes on logout/account switch. Cached world is read-only until the server and private channel recover. Native session/settings use Capacitor Preferences in app-private storage with Android backup disabled; it is not hardware-backed encryption. Web sessions use the SDK default, settings localStorage. Pairing retries reuse an intent's idempotency key after network loss; no offline action queue is introduced in Phase 1.
+
+### Phase 0 diagnostic event
 | Event | Sender | Payload (zod schema) | Rate limit | Notes |
 |---|---|---|---|---|
 | `spike_ping` | Authenticated couple member on web or Android | `spikePingSchema` in `packages/shared/src/index.ts`: UUID `id`, UUID `sender_id`, `device: web \| android`, ISO UTC `sent_at`; strict, no extra fields | Manual only, 1/s client cap | Phase 0 diagnostics. Private `house:<couple_id>`, `private: true`, server acknowledgement, no self-delivery, no persistence or offline replay. Client validates inbound/outbound and retains 128 IDs for duplicate suppression. Identity/time are peer claims, never authority; Supabase authorizes channel membership, not payload identity. No idle broadcasts. |

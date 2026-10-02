@@ -1,5 +1,11 @@
 # DECISIONS
 
+## Phase 1 Android build configuration — 2026-10-02
+
+User selected immediate signup without email verification for private testing on 2026-10-02. Hosted Supabase registration was enabled and Confirm email disabled through the existing authenticated dashboard. Anonymous sign-in remains disabled. The app still handles confirmation-required responses. Free custom SMTP/password-reset delivery is deferred until the app is shared beyond private testing; no paid email service or credential was added.
+
+The debug APK build receives the same public Supabase URL/publishable key as the web build from existing repository variables. These values are public client configuration, never a service-role secret. This avoids re-entering project details on the phone. Native App/Preferences plugins share the web lifecycle/session code; APK version becomes 0.1.0 (code 2). Debug CI signing remains temporary; release signing is a later phase.
+
 Log every architecture or scope decision here (date, decision, reason, alternatives). Propose changes here BEFORE implementing.
 
 ## Open decisions (from MASTER_SPEC Section 27)

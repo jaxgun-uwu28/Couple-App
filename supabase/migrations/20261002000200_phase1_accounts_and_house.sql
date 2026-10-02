@@ -265,16 +265,16 @@ begin
   if p_since_version is null or p_since_version<0 then raise exception 'Invalid snapshot version' using errcode='22023'; end if;
   select c.* into v_pair from public.couples c join public.couple_members m on m.couple_id=c.id
     where m.user_id=v_user and c.status in ('pending','active');
-  if not found then return jsonb_build_object('kind','none','version',0,'user_id',v_user); end if;
+  if not found then return jsonb_build_object('kind','none','version',0,'user_id',v_user,'server_time',now()); end if;
   if p_known_couple_id=v_pair.id and p_since_version=v_pair.snapshot_version then
-    return jsonb_build_object('kind','unchanged','version',v_pair.snapshot_version,'user_id',v_user,'couple_id',v_pair.id);
+    return jsonb_build_object('kind','unchanged','version',v_pair.snapshot_version,'user_id',v_user,'couple_id',v_pair.id,'server_time',now());
   end if;
   select * into v_house from public.houses where couple_id=v_pair.id;
   if not found then raise exception 'House missing; check migration' using errcode='P0001'; end if;
   select coalesce(jsonb_agg(jsonb_build_object('user_id',m.user_id,'seat',m.seat,'role',m.role,
     'joined_at',m.joined_at,'display_name',p.display_name) order by m.seat),'[]'::jsonb)
     into v_members from public.couple_members m join public.profiles p on p.id=m.user_id where m.couple_id=v_pair.id;
-  return jsonb_build_object('kind','full','version',v_pair.snapshot_version,'user_id',v_user,'couple_id',v_pair.id,
+  return jsonb_build_object('kind','full','version',v_pair.snapshot_version,'user_id',v_user,'couple_id',v_pair.id,'server_time',now(),
     'status',v_pair.status,'members',v_members,'house',jsonb_build_object('id',v_house.id,'map_id',v_house.map_id,'layout_version',v_house.layout_version),
     'invite',case when v_pair.status='pending' and v_pair.created_by=v_user and v_pair.invite_code is not null
       then jsonb_build_object('code',v_pair.invite_code,'expires_at',v_pair.invite_expires_at) else null end);
