@@ -24,6 +24,16 @@ export default function World({ client, api, snapshot, onSnapshot, onBack, onLog
   const [rotateAcknowledged, setRotateAcknowledged] = useState(false);
   const openRef = useRef(open); openRef.current = open;
   const [hint, setHint] = useState('');
+  const hintTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const showInteractionHint = () => {
+    if (hintTimer.current !== null) clearTimeout(hintTimer.current);
+    setHint('Nothing to interact with here yet.');
+    hintTimer.current = setTimeout(() => {
+      setHint(current => current === 'Nothing to interact with here yet.' ? '' : current);
+      hintTimer.current = null;
+    }, 3000);
+  };
+  useEffect(() => () => { if (hintTimer.current !== null) clearTimeout(hintTimer.current); }, []);
   const [arrow, setArrow] = useState<{ angle: number; name: string } | null>(null);
   const [knob, setKnob] = useState<Point>({ x: 0, y: 0 });
   useEffect(() => { void readSettings().then(setSettings); }, []);
@@ -91,7 +101,7 @@ export default function World({ client, api, snapshot, onSnapshot, onBack, onLog
           const down = (key: string) => !blocked && this.keys?.[key]?.isDown ? 1 : 0;
           const keyboard = { x: down('D') + down('RIGHT') - down('A') - down('LEFT'), y: down('S') + down('DOWN') - down('W') - down('UP') };
           controller.tick(blocked ? { x: 0, y: 0 } : keyboard.x || keyboard.y ? keyboard : input.current, this.game.loop.rawDelta / 1000, performance.now());
-          if (!blocked && this.keys?.E && Phaser.Input.Keyboard.JustDown(this.keys.E)) setHint('Nothing to interact with here yet.');
+          if (!blocked && this.keys?.E && Phaser.Input.Keyboard.JustDown(this.keys.E)) showInteractionHint();
           const current = controller.view(); const ids = new Set(current.actors.map(actor => actor.id));
           for (const [id, drawing] of this.drawings) if (!ids.has(id)) { drawing.body.destroy(); this.drawings.delete(id); }
           for (const actor of current.actors) this.paint(actor, time);
@@ -121,7 +131,7 @@ export default function World({ client, api, snapshot, onSnapshot, onBack, onLog
       let x = (event.clientX - box.left - box.width / 2) / radius; let y = (event.clientY - box.top - box.height / 2) / radius; const length = Math.hypot(x, y); if (length > 1) { x /= length; y /= length; }
       input.current = length < .15 ? { x: 0, y: 0 } : { x, y }; setKnob({ x: x * radius, y: y * radius });
     }} onPointerUp={resetStick} onPointerCancel={resetStick} onLostPointerCapture={resetStick} onBlur={resetStick}><span style={{ transform: `translate(${knob.x}px, ${knob.y}px)` }} /></div>
-    <button className="interact" onClick={() => setHint('Nothing to interact with here yet.')}>Interact</button>
+    <button className="interact" onClick={showInteractionHint}>Interact</button>
     <div className="world-message" role="status">{view?.takenOver ? <>Playing on another device. <button onClick={() => void runtime.current?.takeControl().catch(error => setHint(error.message))}>Play here</button></> : view?.message || hint}</div>
     {view?.connection === 'error' && <button className="reconnect" onClick={() => void runtime.current?.reconnect()}>Reconnect</button>}
     {!rotateAcknowledged && <div className="rotate-hint">Turn your phone sideways for more room.<button onClick={() => setRotateAcknowledged(true)}>Ready</button></div>}
