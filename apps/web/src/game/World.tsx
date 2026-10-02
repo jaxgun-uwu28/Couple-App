@@ -85,7 +85,7 @@ export default function World({ client, api, snapshot, onSnapshot, onBack, onLog
           this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.game.events.off(Phaser.Core.Events.BLUR, this.clearInput, this));
         }
         private clearInput() { input.current = { x: 0, y: 0 }; this.input.keyboard?.resetKeys(); }
-        private paint(actor: Actor, time: number, pose?:string) {
+        private paint(actor: Actor, time: number, pose?:string, depth?:number) {
           let drawing = this.drawings.get(actor.id);
           if (!drawing) {
             const art = this.add.graphics(); const label = this.add.text(0, -70, actor.name, { fontFamily: 'system-ui', fontSize: '15px', color: '#554451', backgroundColor: '#fff9fa', padding: { x: 8, y: 4 } }).setOrigin(.5);
@@ -95,7 +95,7 @@ export default function World({ client, api, snapshot, onSnapshot, onBack, onLog
           const { body, art, label } = drawing;
           art.setRotation(pose==='Sleep'?-Math.PI/2:0).setScale(pose==='Sit'?.9:1);
           const bob = actor.animation === 'walk' && !settingsRef.current.reducedMotion ? Math.sin(time / 90) * 2 : 0;
-          body.setPosition(actor.point.x, actor.point.y).setDepth(actor.point.y).setAlpha(actor.online ? 1 : .45);
+          body.setPosition(actor.point.x, actor.point.y).setDepth(depth??actor.point.y).setAlpha(actor.online ? 1 : .45);
           label.setText(actor.name + (actor.away ? ' · Away' : !actor.online ? ' · Offline' : '')).setVisible(settingsRef.current.nameTags);
           art.clear(); art.fillStyle(0x61475c, .14).fillEllipse(0, 0, 34, 13);
           art.fillStyle(actor.seat === 1 ? 0xdc96ae : 0x9bbbd0).fillRoundedRect(-13, -29 + bob, 26, 29, 10);
@@ -118,7 +118,7 @@ export default function World({ client, api, snapshot, onSnapshot, onBack, onLog
           const current = controller.view(); const ids = new Set(current.actors.map(actor => actor.id));
           for (const [id, drawing] of this.drawings) if (!ids.has(id)) { drawing.body.destroy(); this.drawings.delete(id); }
           const actors=current.actors.map(actor=>{const occupied=current.world?.slots.find(slot=>slot.user_id===actor.id);const anchor=occupied&&cottageInteractions.find(o=>o.id===occupied.object_id)?.slots.find(s=>s.id===occupied.slot_id);return anchor?{...actor,point:{x:anchor.x,y:anchor.y},direction:anchor.facing as Actor['direction'],animation:'idle' as const}:actor;});
-          for (const actor of actors){const occupied=current.world?.slots.find(s=>s.user_id===actor.id);this.paint(actor,time,occupied?cottageInteractions.find(o=>o.id===occupied.object_id)?.label:undefined);}
+          for (const actor of actors){const occupied=current.world?.slots.find(s=>s.user_id===actor.id);const furniture=occupied&&cottageFurniture.find(o=>o.name===occupied.object_id);this.paint(actor,time,occupied?cottageInteractions.find(o=>o.id===occupied.object_id)?.label:undefined,furniture?furniture.y+furniture.height+2:undefined);}
           this.cottageArt?.update(actors,targetRef.current??null,current.world);
           const self = actors.find(actor => actor.local);
           if (self) { const camera = this.cameras.main; const blend = settingsRef.current.reducedMotion ? 1 : 1 - Math.exp(-delta / 1000 * 8); camera.scrollX += (self.point.x - camera.width / 2 - camera.scrollX) * blend; camera.scrollY += (self.point.y - camera.height / 2 - camera.scrollY) * blend; }

@@ -86,18 +86,22 @@ async function login(page:Page,index:number,path='/'){await page.goto(path);awai
 async function coordinate(page:Page,attribute='data-self-x'){return Number(await page.getByTestId('world').getAttribute(attribute));}
 
 async function walkTo(page:Page,x:number,y:number){
- await page.locator("canvas").click();
  const start=[Math.floor(await coordinate(page)/32),Math.floor(await coordinate(page,'data-self-y')/32)],goal=[Math.floor(x/32),Math.floor(y/32)];
  const key=(p:number[])=>p.join(',');const queue=[start],parents=new Map<string,string|null>([[key(start),null]]);
  for(let i=0;i<queue.length&&!parents.has(key(goal));i++)for(const n of [[queue[i]![0]!+1,queue[i]![1]!],[queue[i]![0]!-1,queue[i]![1]!],[queue[i]![0]!,queue[i]![1]!+1],[queue[i]![0]!,queue[i]![1]!-1]]){if(n[0]!<0||n[1]!<0||n[0]!>=64||n[1]!>=44||parents.has(key(n))||collides({x:n[0]!*32+16,y:n[1]!*32+16},COTTAGE))continue;parents.set(key(n),key(queue[i]!));queue.push(n);}
  expect(parents.has(key(goal))).toBe(true);
  const path:number[][]=[];for(let p:string|null=key(goal);p!==null;p=parents.get(p)??null)path.unshift(p.split(',').map(Number));
  const points=path.filter((p,i)=>i===0||i===path.length-1||(p[0]!-path[i-1]![0]!)!==(path[i+1]![0]!-p[0]!)||(p[1]!-path[i-1]![1]!)!==(path[i+1]![1]!-p[1]!));
- for(const p of points)for(const [attribute,target,negative,positive] of [['data-self-x',p[0]!*32+16,'a','d'],['data-self-y',p[1]!*32+16,'w','s']] as const){const current=await coordinate(page,attribute);if(Math.abs(target-current)<8)continue;const direction=target>current?positive:negative;await page.keyboard.down(direction);await expect.poll(async()=>{const value=await coordinate(page,attribute);return target>current?value>=target-6:value<=target+6;},{timeout:20000,intervals:[50],message:`Walk ${direction} from ${current} to ${target} (${attribute})`}).toBe(true);await page.keyboard.up(direction);await page.waitForTimeout(120);}
+ for(const p of points)for(const [attribute,target,negative,positive] of [['data-self-x',p[0]!*32+16,'a','d'],['data-self-y',p[1]!*32+16,'w','s']] as const){
+  let current=await coordinate(page,attribute);
+  if(Math.abs(target-current)>24){const direction=target>current?positive:negative;await page.keyboard.down(direction);await expect.poll(async()=>{const value=await coordinate(page,attribute);return target>current?value>=target-24:value<=target+24;},{timeout:20000,intervals:[25],message:`Walk ${direction} from ${current} to ${target} (${attribute})`}).toBe(true);await page.keyboard.up(direction);await page.waitForTimeout(120);}
+  for(let adjust=0;adjust<24;adjust++){current=await coordinate(page,attribute);if(Math.abs(target-current)<=2)break;const box=(await page.getByRole('button',{name:'Move',exact:true}).boundingBox())!;const offset=box.width*.32*.22*(target>current?1:-1);const cx=box.x+box.width/2,cy=box.y+box.height/2;await page.mouse.move(cx,cy);await page.mouse.down();await page.mouse.move(cx+(attribute==='data-self-x'?offset:0),cy+(attribute==='data-self-y'?offset:0));await page.waitForTimeout(60);await page.mouse.up();await page.waitForTimeout(110);}
+  expect(Math.abs(target-await coordinate(page,attribute)),`Align ${attribute} to ${target}`).toBeLessThanOrEqual(2);
+ }
 }
 
 test('balanced house: desktop/mobile explore, shared slots, furniture actions and idle budget',async({browser})=>{
- test.setTimeout(180000);const app=fixture(true);app.paired();
+ test.setTimeout(300000);const app=fixture(true);app.paired();
  const desktop=await browser.newContext({viewport:{width:1280,height:720}}),mobile=await browser.newContext({viewport:{width:844,height:390},isMobile:true,hasTouch:true});
  await app.install(desktop,0);await app.install(mobile,1);const a=await desktop.newPage(),b=await mobile.newPage();await login(a,0);await login(b,1);
  await expect(a.getByText('Connected',{exact:true})).toBeVisible();await expect(b.getByText('Connected',{exact:true})).toBeVisible();await expect(a.getByTestId('world')).toHaveAttribute('data-room','hall');
@@ -106,8 +110,9 @@ test('balanced house: desktop/mobile explore, shared slots, furniture actions an
  await walkTo(a,624,992);await expect(a.getByRole('button',{name:'Play',exact:true})).toBeVisible();await a.getByRole('button',{name:'Play',exact:true}).click();await expect(a.getByText('This activity is coming in a later phase.')).toBeVisible();await expect(a.getByText('This activity is coming in a later phase.')).toBeHidden({timeout:5000});
  await Promise.all([walkTo(a,256,1200),walkTo(b,256,1200)]);await Promise.all([a.getByRole('button',{name:'Sit',exact:true}).click(),b.getByRole('button',{name:'Sit',exact:true}).click()]);
  // A racing loser gets authoritative busy feedback, then retries the free seat.
- for(const page of [a,b])if(await page.getByRole('button',{name:'Sit',exact:true}).isVisible()){await expect(page.getByText('That spot is busy. Try the other spot.')).toBeVisible();await page.getByRole('button',{name:'Sit',exact:true}).click();}
+ await Promise.all([a,b].map(async page=>{await expect.poll(async()=>await page.getByRole('button',{name:'Leave',exact:true}).isVisible()||await page.getByText('That spot is busy. Try the other spot.').isVisible()).toBe(true);if(!await page.getByRole('button',{name:'Leave',exact:true}).isVisible())await page.getByRole('button',{name:'Sit',exact:true}).click();}));
  await expect(a.getByRole('button',{name:'Leave',exact:true})).toBeVisible();await expect(b.getByRole('button',{name:'Leave',exact:true})).toBeVisible();
+ await a.getByRole('button',{name:'Settings',exact:true}).click();await a.getByRole('button',{name:'Reconnect',exact:true}).click();await expect(a.getByText('Connected',{exact:true})).toBeVisible();await expect(a.getByRole('button',{name:'Leave',exact:true})).toBeVisible();
  await mkdir('artifacts/phase2',{recursive:true});await a.screenshot({path:'artifacts/phase2/balanced-house-desktop.png'});await b.screenshot({path:'artifacts/phase2/balanced-house-mobile.png'});
  await a.keyboard.press('Escape');await b.getByRole('button',{name:'Leave',exact:true}).click();await expect(a.getByRole('button',{name:'Sit',exact:true})).toBeVisible();
  await walkTo(a,144,256);await expect(a.getByTestId('world')).toHaveAttribute('data-room','kitchen');await a.getByRole('button',{name:'Open',exact:true}).click();

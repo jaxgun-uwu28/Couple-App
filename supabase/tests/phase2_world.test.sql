@@ -1,4 +1,6 @@
 begin;
+create extension if not exists pgtap with schema extensions;
+set local search_path=public,extensions;
 select plan(28);
 insert into auth.users(id,email,raw_user_meta_data) values
 ('21000000-0000-4000-8000-000000000001','phase2-a@example.invalid','{}'),

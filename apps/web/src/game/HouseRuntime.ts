@@ -111,6 +111,10 @@ export class HouseRuntime {
         await this.transport.track(this.currentPresence());
         if(this.disposed||generation!==this.generation)return;
         this.applyPresence(this.transport.presence());
+        // A winning new device releases only its caller's stale session lease.
+        // Observing/losing devices never release the winning device's activity.
+        const stale=this.worldValue?.slots.find(slot=>slot.user_id===this.local.user_id&&slot.session_id!==this.local.session_id);
+        if(this.cottage&&!this.takeover&&stale&&this.api.interact){await this.api.interact('cancel',null,null,stale.session_id,this.local);await this.refreshWorld();await this.worldChanged();}
         this.stopMotion();this.budget.reset(this.local,performance.now());
         if(this.active&&!this.takeover){
           if(!this.announced){await this.sendMotion('PLAYER_JOINED');this.announced=true;}
@@ -232,7 +236,7 @@ export class HouseRuntime {
       const activity=this.ownSlot();
       if(activity){
         if(Math.hypot(input.x,input.y)>.15)void this.cancelInteraction().catch(error=>{this.feedback=error.message;this.notify();});
-        else if(!this.interactionBusy&&now-this.lastRenew>=30000&&this.api.interact){this.lastRenew=now;void this.api.interact('renew',activity.object_id,activity.slot_id,this.local.session_id,this.local).then(()=>this.refreshWorld()).catch(()=>{this.feedback='Your activity could not reconnect. Leave and try again.';this.notify();});}
+        else if(!this.interactionBusy&&now-this.lastRenew>=30000&&this.api.interact){this.lastRenew=now;void this.api.interact('renew',activity.object_id,activity.slot_id,this.local.session_id,this.local).then(()=>this.refreshWorld()).catch(()=>{if(this.ownSlot()?.object_id===activity.object_id&&!this.interactionBusy){this.feedback='Your activity could not reconnect. Leave and try again.';this.notify();}});}
         input={x:0,y:0};
       }
       if(this.interactionBusy)input={x:0,y:0};
