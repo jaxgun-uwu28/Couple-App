@@ -8,6 +8,8 @@ export class CottageArt {
  private doors: {object: typeof cottageDoors[number]; art: Phaser.GameObjects.Graphics}[]=[];
  private walls: {object: typeof cottageDoors[number]; art: Phaser.GameObjects.Graphics}[]=[];
  private outline: Phaser.GameObjects.Graphics;
+ private lastTarget: string|null=null;
+ private lastStates='';
  private toggles: {object: typeof cottageFurniture[number];art:Phaser.GameObjects.Graphics}[]=[];
  constructor(scene: Phaser.Scene,onTap:(id:string)=>void){
   const floor=scene.add.graphics().setDepth(-1000);
@@ -17,6 +19,13 @@ export class CottageArt {
    floor.lineStyle(1,0xa88881,.12);
    for(let y=room.y;y<room.y+room.height;y+=32){floor.lineBetween(room.x,y,room.x+room.width,y);if(room.name==='bathroom')for(let x=room.x;x<room.x+room.width;x+=32)floor.lineBetween(x,y,x,y+32);else for(let x=room.x+(y/32%2?48:0);x<room.x+room.width;x+=96)floor.lineBetween(x,y,x,y+32);}
   }
+  // The floor's thousands of line commands never change. Rasterize once,
+  // rather than tessellating/drawing them on every mobile frame.
+  const floorKey='cottage-floor';
+  floor.generateTexture(floorKey,2048,1408);
+  scene.add.image(0,0,floorKey).setOrigin(0).setDepth(-1000);
+  floor.destroy();
+  scene.events.once('shutdown',()=>scene.textures.remove(floorKey));
   for(const d of cottageDecorations){
    const g=scene.add.graphics().setDepth(d.type==='rug'||d.type==='mat'?-900:d.y+d.height);
    if(d.type==='rug'||d.type==='mat'){g.fillStyle(d.type==='rug'?0xe9d0d9:0x9bbbd0,.7).fillRoundedRect(d.x,d.y,d.width,d.height,22);g.lineStyle(3,colors.cream,.6).strokeRoundedRect(d.x+9,d.y+9,d.width-18,d.height-18,16);}
@@ -57,9 +66,12 @@ export class CottageArt {
   this.outline=scene.add.graphics().setDepth(5000);
  }
  update(actors: Actor[], target: string|null,state:WorldState|null){
-  for(const {object:b,art} of this.toggles){art.clear();const enabled=state?.states.some(s=>s.object_id===b.name&&s.enabled);if(enabled){if(b.type==='lamp')art.fillStyle(colors.gold,.18).fillCircle(b.x+b.width/2,b.y+b.height/2,64);else if(b.type==='tv')art.fillStyle(colors.sky,.9).fillRoundedRect(b.x+8,b.y+5,b.width-16,b.height-10,3);else if(b.type==='fridge')art.fillStyle(0xe9eef2).fillRoundedRect(b.x+8,b.y+8,b.width-16,b.height-16,6).lineStyle(3,colors.dark,.4).lineBetween(b.x+b.width,b.y+10,b.x+b.width+16,b.y+28);else art.fillStyle(colors.sky,.5).fillEllipse(b.x+b.width/2,b.y+b.height*.64,b.width-30,b.height*.3);}}
-  for(const {object:d,art} of this.doors){const near=actors.some(a=>a.online&&!a.away&&Math.hypot(a.point.x-(d.x+d.width/2),a.point.y-(d.y+d.height/2))<112);art.clear();art.fillStyle(0xbe9a85);if(near)art.fillRoundedRect(d.x,d.y,Math.min(d.width,8),Math.min(d.height,8),2);else art.fillRoundedRect(d.x+4,d.y+4,d.width-8,d.height-8,4);}
-  for(const {object:w,art} of this.walls)art.setAlpha(actors.some(a=>a.point.x>w.x-25&&a.point.x<w.x+w.width+25&&a.point.y>w.y-65&&a.point.y<w.y+w.height+12)?.45:1);
-  this.outline.clear();const object=cottageFurniture.find(o=>o.name===target);if(object)this.outline.lineStyle(3,colors.gold,.95).strokeRoundedRect(object.x-4,object.y-4,object.width+8,object.height+8,12);
+  const states=JSON.stringify(state?.states??[]);
+  if(states!==this.lastStates){this.lastStates=states;
+   for(const {object:b,art} of this.toggles){art.clear();const enabled=state?.states.some(s=>s.object_id===b.name&&s.enabled);if(enabled){if(b.type==='lamp')art.fillStyle(colors.gold,.18).fillCircle(b.x+b.width/2,b.y+b.height/2,64);else if(b.type==='tv')art.fillStyle(colors.sky,.9).fillRoundedRect(b.x+8,b.y+5,b.width-16,b.height-10,3);else if(b.type==='fridge')art.fillStyle(0xe9eef2).fillRoundedRect(b.x+8,b.y+8,b.width-16,b.height-16,6).lineStyle(3,colors.dark,.4).lineBetween(b.x+b.width,b.y+10,b.x+b.width+16,b.y+28);else art.fillStyle(colors.sky,.5).fillEllipse(b.x+b.width/2,b.y+b.height*.64,b.width-30,b.height*.3);}}
+  }
+  for(const {object:d,art} of this.doors){const near=actors.some(a=>a.online&&!a.away&&Math.hypot(a.point.x-(d.x+d.width/2),a.point.y-(d.y+d.height/2))<112);if(art.getData('open')===near)continue;art.setData('open',near);art.clear();art.fillStyle(0xbe9a85);if(near)art.fillRoundedRect(d.x,d.y,Math.min(d.width,8),Math.min(d.height,8),2);else art.fillRoundedRect(d.x+4,d.y+4,d.width-8,d.height-8,4);}
+  for(const {object:w,art} of this.walls)art.setAlpha(actors.some(a=>a.online&&a.point.y>w.y+w.height&&a.point.y-65<w.y+w.height&&a.point.x+20>w.x&&a.point.x-20<w.x+w.width)?.85:1);
+  if(target!==this.lastTarget){this.lastTarget=target;this.outline.clear();const object=cottageFurniture.find(o=>o.name===target);if(object)this.outline.lineStyle(3,colors.gold,.95).strokeRoundedRect(object.x-4,object.y-4,object.width+8,object.height+8,12);}
  }
 }

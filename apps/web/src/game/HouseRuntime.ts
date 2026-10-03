@@ -14,6 +14,8 @@ export class HouseRuntime {
   private worldRead:Promise<void>|null=null;
   private interactionBusy=false;
   private lastRenew=0;
+  private renewal:Promise<void>|null=null;
+  private checkedExpiry=-Infinity;
   private worldOffset=0;
   private refreshTimer:ReturnType<typeof setTimeout>|null=null;
   private seenWorld=new Set<string>();
@@ -178,6 +180,7 @@ export class HouseRuntime {
       if(!this.snapshotValue.members.some(member=>member.user_id===request.user_id)||request.session_id===this.local.session_id||!this.active||this.takeover)return;
       const now=performance.now();if(now-(this.lastSyncResponse.get(request.user_id)??-Infinity)<1000)return;
       this.lastSyncResponse.set(request.user_id,now);
+      if(this.cottage)void this.refreshWorld().then(()=>this.worldChanged()).catch(()=>undefined);
       void this.send({event:'sync_response',payload:{request_id:request.request_id,to_session:request.session_id,player:this.packet()}}).catch(()=>undefined);
       return;
     }
@@ -223,20 +226,34 @@ export class HouseRuntime {
     finally{this.interactionBusy=false;this.notify();}
   }
   async cancelInteraction(){
+    // A Leave must follow any in-flight renewal, never race it.
+    if(this.renewal)await this.renewal;
     if(!this.cottage||!this.ownSlot()||!this.api.interact||this.interactionBusy)return;
     this.interactionBusy=true;this.notify();
     try{await this.api.interact('cancel',null,null,this.local.session_id,this.local);await this.refreshWorld();await this.worldChanged();}
     finally{this.interactionBusy=false;this.notify();}
   }
   private async worldChanged(){if(this.connection==='connected'&&!this.disposed)await this.send({event:'object_changed',payload:{couple_id:this.local.couple_id,user_id:this.local.user_id,session_id:this.local.session_id,request_id:crypto.randomUUID()}});}
+  private renewInteraction(activity:NonNullable<WorldState['slots'][number]>,now:number){
+    if(this.renewal||!this.api.interact)return;
+    this.lastRenew=now;
+    this.renewal=(async()=>{
+      try{await this.api.interact!('renew',activity.object_id,activity.slot_id,this.local.session_id,this.local);await this.refreshWorld();await this.worldChanged();}
+      catch{await this.refreshWorld().then(()=>this.worldChanged()).catch(()=>undefined);if(this.ownSlot()?.object_id===activity.object_id){this.feedback='Your activity could not reconnect. Leave and try again.';this.notify();}}
+    })().finally(()=>{this.renewal=null;});
+  }
   tick(input:Point,dt:number,now:number){
     if(this.disposed)return;
     for(const remote of this.remotes.values())remote.point=remote.motion.sample(now,dt);
+    // A missed invalidation must not permanently remove a still-renewed seat.
+    // Read once per observed lease expiry; an empty world schedules nothing.
+    const expired=this.worldValue?.slots.map(s=>Date.parse(s.expires_at)).filter(expiry=>expiry<=Date.now()+this.worldOffset&&expiry>this.checkedExpiry)??[];
+    if(this.cottage&&this.active&&this.connection==='connected'&&expired.length){this.checkedExpiry=Math.max(...expired);void this.refreshWorld().catch(()=>undefined);}
     if(this.ready&&this.active&&!this.takeover&&this.connection==='connected'){
       const activity=this.ownSlot();
       if(activity){
         if(Math.hypot(input.x,input.y)>.15)void this.cancelInteraction().catch(error=>{this.feedback=error.message;this.notify();});
-        else if(!this.interactionBusy&&now-this.lastRenew>=30000&&this.api.interact){this.lastRenew=now;void this.api.interact('renew',activity.object_id,activity.slot_id,this.local.session_id,this.local).then(()=>this.refreshWorld()).catch(()=>{if(this.ownSlot()?.object_id===activity.object_id&&!this.interactionBusy){this.feedback='Your activity could not reconnect. Leave and try again.';this.notify();}});}
+        else if(!this.interactionBusy&&now-this.lastRenew>=30000)this.renewInteraction(activity,now);
         input={x:0,y:0};
       }
       if(this.interactionBusy)input={x:0,y:0};

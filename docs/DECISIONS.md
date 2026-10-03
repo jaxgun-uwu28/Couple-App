@@ -1,5 +1,11 @@
 # DECISIONS
 
+## 2026-10-03 — Phase 2 device feedback corrections
+
+User reported phone frame stutter, excessive wall transparency, persistent activity outlines and long sitting diverging between devices; requested slightly faster walking. Preserve map, art direction and stack. Bake the static floor into one scene-owned texture, avoid rebuilding unchanged dynamic graphics/labels, and use elapsed frame time for camera following. Keep walls at least 85% opaque and fade only where an online avatar's head is actually occluded. Increase cottage speed by 10%, from 120 to 132px/s. Hide nearest-object outlines while the local player occupies an activity slot; toggle objects keep their ordinary prompts.
+
+Lease renewal currently refreshes only the caller, leaving the partner's cached expiry stale. Broadcast the existing object_changed invalidation after successful renewal, serialize renewal with other interactions, and refresh authoritative state after failed renewal. At observed slot expiry, perform a bounded one-shot read to recover a missed notification; do not introduce standing-idle polling, new events, RPCs or database changes. Verify long occupancy, lost invalidation, cancellation and mobile/desktop rendering before publishing the matching web/APK fix.
+
 ## 2026-10-03 — Phase 2 balanced cottage and map authority
 
 User authorized Phase 2 and selected spacing A: 64×44 at 32px, four-tile hall and three-tile doors. Author the source map through official Tiled scripting/export before game integration, retain editable TMX and exported JSON, and validate geometry/navigation/spawns/interaction slots. Use custom code-native furniture art in the approved palette instead of unrelated downloaded assets. Preserve existing motion smoothing and input; derive collision, rooms and prompts from the map rather than maintaining a second hard-coded layout.

@@ -54,7 +54,7 @@ export default function World({ client, api, snapshot, onSnapshot, onBack, onLog
       if (cancelled || !host.current) return;
       class HouseScene extends Phaser.Scene {
         private cottageArt: CottageArt | null = null;
-        private drawings = new Map<string, { body: import('phaser').GameObjects.Container; art: import('phaser').GameObjects.Graphics; label: import('phaser').GameObjects.Text }>();
+        private drawings = new Map<string, { body: import('phaser').GameObjects.Container; art: import('phaser').GameObjects.Graphics; label: import('phaser').GameObjects.Text; frame?:string }>();
         private keys!: Record<string, import('phaser').Input.Keyboard.Key>;
         private lastArrow = 0;
         create() {
@@ -94,9 +94,14 @@ export default function World({ client, api, snapshot, onSnapshot, onBack, onLog
           }
           const { body, art, label } = drawing;
           art.setRotation(pose==='Sleep'?-Math.PI/2:0).setScale(pose==='Sit'?.9:1);
-          const bob = actor.animation === 'walk' && !settingsRef.current.reducedMotion ? Math.sin(time / 90) * 2 : 0;
+          const bob = actor.animation === 'walk' && !settingsRef.current.reducedMotion ? Math.round(Math.sin(time / 90) * 8)/4 : 0;
           body.setPosition(actor.point.x, actor.point.y).setDepth(depth??actor.point.y).setAlpha(actor.online ? 1 : .45);
-          label.setText(actor.name + (actor.away ? ' · Away' : !actor.online ? ' · Offline' : '')).setVisible(settingsRef.current.nameTags);
+          const name=actor.name + (actor.away ? ' · Away' : !actor.online ? ' · Offline' : '');
+          if(label.text!==name)label.setText(name);
+          label.setVisible(settingsRef.current.nameTags);
+          const frame=`${actor.seat}:${actor.direction}:${bob}`;
+          if(drawing.frame===frame)return;
+          drawing.frame=frame;
           art.clear(); art.fillStyle(0x61475c, .14).fillEllipse(0, 0, 34, 13);
           art.fillStyle(actor.seat === 1 ? 0xdc96ae : 0x9bbbd0).fillRoundedRect(-13, -29 + bob, 26, 29, 10);
           art.fillStyle(0x66515c).fillRoundedRect(-12, -5 + bob, 10, 9, 4).fillRoundedRect(2, -5 - bob, 10, 9, 4);
@@ -108,7 +113,7 @@ export default function World({ client, api, snapshot, onSnapshot, onBack, onLog
             art.lineStyle(1.5, 0xb67d7c).lineBetween(-3 + offset, -35 + bob, 3 + offset, -35 + bob);
           }
         }
-        update(time: number, delta: number) {
+        update(time: number) {
           const blocked = openRef.current || /INPUT|TEXTAREA|SELECT/.test(document.activeElement?.tagName ?? '');
           const down = (key: string) => !blocked && this.keys?.[key]?.isDown ? 1 : 0;
           const keyboard = { x: down('D') + down('RIGHT') - down('A') - down('LEFT'), y: down('S') + down('DOWN') - down('W') - down('UP') };
@@ -119,9 +124,10 @@ export default function World({ client, api, snapshot, onSnapshot, onBack, onLog
           for (const [id, drawing] of this.drawings) if (!ids.has(id)) { drawing.body.destroy(); this.drawings.delete(id); }
           const actors=current.actors.map(actor=>{const occupied=current.world?.slots.find(slot=>slot.user_id===actor.id);const anchor=occupied&&cottageInteractions.find(o=>o.id===occupied.object_id)?.slots.find(s=>s.id===occupied.slot_id);return anchor?{...actor,point:{x:anchor.x,y:anchor.y},direction:anchor.facing as Actor['direction'],animation:'idle' as const}:actor;});
           for (const actor of actors){const occupied=current.world?.slots.find(s=>s.user_id===actor.id);const furniture=occupied&&cottageFurniture.find(o=>o.name===occupied.object_id);this.paint(actor,time,occupied?cottageInteractions.find(o=>o.id===occupied.object_id)?.label:undefined,furniture?furniture.y+furniture.height+2:undefined);}
-          this.cottageArt?.update(actors,targetRef.current??null,current.world);
+          const occupied=current.world?.slots.some(s=>s.user_id===snapshot.user_id&&s.session_id===current.sessionId);
+          this.cottageArt?.update(actors,occupied?null:targetRef.current??null,current.world);
           const self = actors.find(actor => actor.local);
-          if (self) { const camera = this.cameras.main; const blend = settingsRef.current.reducedMotion ? 1 : 1 - Math.exp(-delta / 1000 * 8); camera.scrollX += (self.point.x - camera.width / 2 - camera.scrollX) * blend; camera.scrollY += (self.point.y - camera.height / 2 - camera.scrollY) * blend; }
+          if (self) { const camera = this.cameras.main; const blend = settingsRef.current.reducedMotion ? 1 : 1 - Math.exp(-Math.min(this.game.loop.rawDelta,250) / 1000 * 8); camera.scrollX += (self.point.x - camera.width / 2 - camera.scrollX) * blend; camera.scrollY += (self.point.y - camera.height / 2 - camera.scrollY) * blend; }
           if (time - this.lastArrow > 200) {
             this.lastArrow = time; const partner = actors.find(actor => !actor.local); const camera = this.cameras.main;
             const visible = partner && partner.point.x > camera.scrollX + 45 && partner.point.x < camera.scrollX + camera.width - 45 && partner.point.y > camera.scrollY + 65 && partner.point.y < camera.scrollY + camera.height - 45;

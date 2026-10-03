@@ -1,5 +1,9 @@
 # DESIGN — Paw & Us
 
+## Phase 2 user feedback — 2026-10-03
+
+Keep the approved cottage/HUD. Walls remain at least 85% opaque, with only a slight fade when they actually cover an online player's head. Hide the nearest-object outline throughout the local player's occupied Sit/Sleep/activity; restore it after leaving. Toggle interactions such as TV/lights retain normal outlines. Walking speed increases slightly, 120 to 132px/s. Static floor caching and unchanged-art reuse preserve the approved appearance while reducing per-frame mobile drawing work.
+
 Status: **ART DIRECTION AND PHASE 0 REFERENCES APPROVED — 2026-10-02.** User approved the connected home and interaction studies with "looks good proceed". These remain concept references, not finished production assets.
 
 ## Phase 2 production spacing — approved 2026-10-03

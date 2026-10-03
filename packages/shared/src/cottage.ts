@@ -4,7 +4,7 @@ import type { Point } from './house';
 export type MapObject = { name: string; type: string; x: number; y: number; width: number; height: number; properties?: { name: string; value: unknown }[] };
 export const mapObjects = (name: string): MapObject[] => (map.layers.find(layer => layer.name === name)?.objects ?? []) as MapObject[];
 export const mapProperties = (object: MapObject): Record<string, unknown> => Object.fromEntries((object.properties ?? []).map(property => [property.name, property.value]));
-export const COTTAGE = { width: map.width * 32, height: map.height * 32, margin: 0, radius: 12, speed: 120, furniture: mapObjects('Collision').map(o => ({ ...o, kind: o.type })) };
+export const COTTAGE = { width: map.width * 32, height: map.height * 32, margin: 0, radius: 12, speed: 132, furniture: mapObjects('Collision').map(o => ({ ...o, kind: o.type })) };
 export const cottageRooms = mapObjects('Rooms');
 export const cottageFurniture = mapObjects('Furniture');
 export const cottageDoors = mapObjects('Doors');

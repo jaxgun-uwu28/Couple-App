@@ -4,7 +4,7 @@ Document every Realtime Broadcast event and every RPC here, in the same change t
 
 ## Phase 2 world contracts (hosted world and private-channel checks passed)
 
-`cottage-v1` uses layout version 2, 2048×1408 geometry, 120px/s feet collision, five named room IDs and existing motion events/smoothing. `PLAYER_ROOM_CHANGED` carries the same validated full motion frame. Phase 1 geometry remains available for old snapshots/tests. Phase 2 Presence advertises `app_version: phase2`; versioned private channel `house:<couple_id>:cottage-v1` separates incompatible maps. Membership policies must authorize this exact suffix as well as the existing channel; no arbitrary topics.
+`cottage-v1` uses layout version 2, 2048×1408 geometry, 132px/s feet collision (user-requested 10% increase), five named room IDs and existing motion events/smoothing. `PLAYER_ROOM_CHANGED` carries the same validated full motion frame. Phase 1 geometry remains available for old snapshots/tests. Phase 2 Presence advertises `app_version: phase2`; versioned private channel `house:<couple_id>:cottage-v1` separates incompatible maps. Membership policies must authorize this exact suffix as well as the existing channel; no arbitrary topics.
 
 Implemented by `20261003000100_phase2_house_world.sql`:
 
@@ -16,7 +16,7 @@ Implemented by `20261003000100_phase2_house_world.sql`:
 
 Actions return `{ok:true,couple_id}` or `{ok:false,code,couple_id?}`. Codes: REQUEST_CONFLICT, NO_HOUSE, INVALID_ACTION, INVALID_OBJECT, OUT_OF_RANGE, UNAVAILABLE, INVALID_SLOT, BUSY, ALREADY_USING, NOT_OWNER. Anonymous execute and client table writes are denied; all three new tables have RLS. Catalog is global public map metadata readable by authenticated users; couple states/slots require membership.
 
-Slots expire after 90 seconds; active connected seated/lying clients renew every 30 seconds, and background/Leave/movement/Escape/disposal release their own session best effort. Reconnect refreshes authoritative state. Ordinary standing idle players send no movement/object events or polling. `object_changed` strict payload contains only UUID `couple_id,user_id,session_id,request_id`; it is sent after successful start/cancel/toggle, never a state write. Receivers bind membership/current Presence session, suppress 128 duplicate IDs and coalesce refresh hints at two reads/s; recovery always reads server state even if a hint was lost. Slot renewal is RPC-only and does not add motion events. Object-state leases use server time adjusted locally; expired slots disappear without idle polling.
+Slots expire after 90 seconds; active connected seated/lying clients renew every 30 seconds, and background/Leave/movement/Escape/disposal release their own session best effort. Renewals serialize with Leave and reconcile authoritative state after errors. Reconnect refreshes authoritative state. Ordinary standing idle players send no movement/object events or polling. `object_changed` strict payload contains only UUID `couple_id,user_id,session_id,request_id`; it is sent after successful start/cancel/toggle/renew and when answering recovery sync, never a state write. Receivers bind membership/current Presence session, suppress 128 duplicate IDs and coalesce refresh hints at two reads/s; recovery always reads server state even if a hint was lost. Renewal adds no motion events. Object-state leases use server time adjusted locally; observing a cached lease expire triggers one authoritative refresh to recover a missed notification. Empty world state schedules no polling.
 
 ## Phase 1 RPC contracts
 
