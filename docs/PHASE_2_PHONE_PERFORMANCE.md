@@ -30,7 +30,7 @@ None. Previous movement budget and lease fixes remain.
 
 ## Known Issues
 
-Actual Infinix frame rate is unknown; do not claim the phone problem resolved until rechecked. The new Settings reading makes that check measurable. Retain debug-install certificate handling; server account data remains intact.
+User rechecked 0.2.2 on the Infinix and reports good smoothness after about a minute of walking, with observed FPS roughly 55–77+. Phone smoothness gate passed by user report. A separate new-login partner-position interpolation bug is being corrected; do not mark Phase 2 complete until that recheck. Retain debug-install certificate handling; server account data remains intact.
 
 ## Next Phase
 

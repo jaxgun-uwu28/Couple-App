@@ -132,8 +132,9 @@ export class RemoteMotion {
     }
     let v = velocity({ x: frame.vx / this.world.speed, y: frame.vy / this.world.speed }, this.world);
     if (frame.animation === 'idle') v = { x: 0, y: 0 };
-    if (!this.latest) this.rendered = { ...point };
-    if (!sameSession) { this.timeline = []; this.clockOffset = null; }
+    // A fresh login/device session establishes a new position. Interpolating
+    // from the previous session invents a walk across rooms (and through walls).
+    if (!sameSession) { this.rendered = { ...point }; this.displayed = null; this.timeline = []; this.clockOffset = null; }
     this.latest = { ...frame, ...point, vx: v.x, vy: v.y }; this.receivedAt = now;
     if (frame.motion_ms === undefined) { this.timeline = []; this.clockOffset = null; }
     else {

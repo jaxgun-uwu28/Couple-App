@@ -139,7 +139,7 @@ export default function World({ client, api, snapshot, onSnapshot, onBack, onLog
             if(this.movingFrames.length>=120){
               const average=this.movingFrames.reduce((sum,value)=>sum+value,0)/this.movingFrames.length;
               const slow=this.movingFrames.filter(value=>value>34).length;
-              performanceReading.current=`0.2.2 · ${this.game.renderer.type===Phaser.WEBGL?'WebGL':'Canvas'} · Walking ${Math.round(1000/average)} FPS · ${slow}/120 frames over 34ms`;
+              performanceReading.current=`0.2.3 · ${this.game.renderer.type===Phaser.WEBGL?'WebGL':'Canvas'} · Walking ${Math.round(1000/average)} FPS · ${slow}/120 frames over 34ms`;
               this.movingFrames=[];
             }
           }

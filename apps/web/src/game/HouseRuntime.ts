@@ -195,7 +195,10 @@ export class HouseRuntime {
     if(session.status!=='online'&&message.event!=='PLAYER_LEFT')return;
     if(frame.user_id===this.local.user_id&&!this.takeover)return;
     const remote=this.remotes.get(frame.user_id)!;
-    if(remote.motion.accept(frame,performance.now(),initial)){
+    const newSession=remote.motion.frame?.session_id!==frame.session_id;
+    const receivedAt=performance.now();
+    if(remote.motion.accept(frame,receivedAt,initial)){
+      if(newSession)remote.point=remote.motion.sample(receivedAt,0);
       this.received++;remote.lastSeen=Date.now();
       if(message.event==='PLAYER_LEFT'){remote.motion.stop();remote.online=false;remote.offlineSince=performance.now();}
       this.notify();

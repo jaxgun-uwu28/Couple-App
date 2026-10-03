@@ -4,6 +4,8 @@ Document every Realtime Broadcast event and every RPC here, in the same change t
 
 ## Phase 2 world contracts (hosted world and private-channel checks passed)
 
+Motion session lifecycle: the first valid frame for a newly preferred session immediately establishes its sanitized position and resets playback/display history. Same-session movement and reconnect responses retain smoothing. HouseRuntime still requires matching couple membership and the current Presence session before accepting any frame; superseded session packets cannot reset the display. Login retains the hall spawn; no persistent position RPC is added.
+
 `cottage-v1` uses layout version 2, 2048×1408 geometry, 132px/s feet collision (user-requested 10% increase), five named room IDs and existing motion events/smoothing. `PLAYER_ROOM_CHANGED` carries the same validated full motion frame. Phase 1 geometry remains available for old snapshots/tests. Phase 2 Presence advertises `app_version: phase2`; versioned private channel `house:<couple_id>:cottage-v1` separates incompatible maps. Membership policies must authorize this exact suffix as well as the existing channel; no arbitrary topics.
 
 Implemented by `20261003000100_phase2_house_world.sql`:

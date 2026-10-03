@@ -122,6 +122,25 @@ test('balanced house: desktop/mobile explore, shared slots, furniture actions an
  await desktop.close();await mobile.close();
 });
 
+test('phone login in a new session establishes the hall spawn on the partner immediately',async({browser})=>{
+ test.setTimeout(90000);
+ const app=fixture(true);app.paired();
+ const desktop=await browser.newContext({viewport:{width:1280,height:800}}),phone=await browser.newContext({viewport:{width:844,height:390},hasTouch:true,isMobile:true});
+ await app.install(desktop,0);await app.install(phone,1);
+ const a=await desktop.newPage(),b=await phone.newPage();await login(a,0);await login(b,1);
+ await expect(a.getByText('Connected',{exact:true})).toBeVisible();await expect(b.getByText('Connected',{exact:true})).toBeVisible();
+ await walkTo(b,800,1008);await expect(b.getByTestId('world')).toHaveAttribute('data-room','living');
+ await expect.poll(()=>coordinate(a,'data-partner-x')).toBeLessThan(850);
+ await b.getByRole('button',{name:'Settings',exact:true}).click();await b.getByRole('button',{name:'Sign out',exact:true}).click();
+ await expect(b.getByRole('button',{name:'Sign in',exact:true})).toBeVisible();
+ await login(b,1);await expect(b.getByText('Connected',{exact:true})).toBeVisible();await expect(b.getByTestId('world')).toHaveAttribute('data-room','hall');
+ // Packet delivery is delayed 150ms, but the first valid new-session frame
+ // must establish the spawn, never ease across the wall from the old room.
+ await expect.poll(async()=>Math.hypot(await coordinate(a,'data-partner-x')-await coordinate(b),await coordinate(a,'data-partner-y')-await coordinate(b,'data-self-y')),{timeout:1500,intervals:[25]}).toBeLessThan(1);
+ await a.waitForTimeout(600);expect(await coordinate(a,'data-partner-x')).toBe(await coordinate(b));
+ await desktop.close();await phone.close();
+});
+
 test('signup confirmation, invalid invite, create/cancel and session persistence',async({browser})=>{
   const app=fixture();const context=await browser.newContext();await app.install(context,0);const page=await context.newPage();await page.goto('/');
   await page.getByRole('button',{name:'Create account',exact:true}).click();await page.getByLabel('Name',{exact:true}).fill('Rose');await page.getByLabel('Email',{exact:true}).fill('player0@example.test');await page.getByLabel('Password',{exact:true}).fill('fixture-password');await page.getByRole('button',{name:'Create account',exact:true}).first().click();

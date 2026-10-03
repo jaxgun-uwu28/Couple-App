@@ -1,5 +1,9 @@
 # DECISIONS
 
+## 2026-10-03 — New login session position correction
+
+User verified smooth phone movement at roughly 55–77+ FPS on 0.2.2. Preserve that rendering profile. A new login deliberately spawns in the hall, but RemoteMotion retained the previous session's rendered position and eased toward the new spawn, producing a false walk through the house. Reset rendered position, display frame and playback timeline on a validated new session's first packet; publish its received point immediately. Continue smoothing ordinary same-session corrections/reconnects. Existing membership/Presence session filtering rejects superseded packets; no persistent position feature, new event, RPC or database change.
+
 ## 2026-10-03 — Android-only performance follow-up
 
 User reports 0.2.1 phone movement remains choppy. User confirmed Infinix Note 30, Helio G99, 8GB RAM, Android 14; Chrome is equally choppy, so this is not assumed to be a native wrapper issue. Actual device frame rate is unknown. Preserve desktop rendering, movement/network/database behavior and visual quality. When Capacitor.isNativePlatform() or primary pointer is coarse, bake static furniture/decorations to bounded RenderTextures at their original depths, retaining live doors/walls/toggles/outline; avoid React reconciliation on joystick pointer moves by updating its knob transform directly. Request high-performance WebGL context without disabling antialiasing or forcing a renderer. Add phone-only local Settings diagnostics for renderer, latest moving frame rate and slow frames; no uploads or realtime telemetry. Verify cached geometry/occlusion and cleanup in an isolated real-renderer browser test, preserve normal regression coverage and deliver a matching APK. Do not claim a phone FPS improvement without the user's measurement.

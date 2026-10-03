@@ -40,6 +40,23 @@ describe('free-tier motion budget', () => {
   });
 });
 describe('remote motion at 150ms latency', () => {
+  it('establishes a fresh session immediately without walking from the old session',()=>{
+    const remote=new RemoteMotion(frame);
+    remote.accept({...frame,x:900,y:850,direction:'left',motion_ms:10000},0);
+    remote.sample(150,.016);
+    const fresh={...frame,session_id:'44444444-4444-4444-8444-444444444444',seq:0,x:590,y:490,direction:'down' as const,motion_ms:0};
+    expect(remote.accept(fresh,200)).toBe(true);
+    expect(remote.sample(200,0)).toEqual({x:590,y:490});
+    expect(remote.displayFrame?.direction).toBe('down');
+    expect(remote.sample(216,.016)).toEqual({x:590,y:490});
+  });
+  it('keeps same-session recovery corrections smooth',()=>{
+    const remote=new RemoteMotion(frame);remote.accept(frame,0);
+    remote.accept({...frame,seq:2,x:850,y:490},200,true);
+    const point=remote.sample(216,.016);
+    expect(point.x).toBeGreaterThan(frame.x);
+    expect(point.x-frame.x).toBeLessThanOrEqual(170*1.4*.016);
+  });
   it('rejects duplicates/out-of-order, accepts a new session sequence', () => {
     const remote=new RemoteMotion(frame);expect(remote.accept(frame,0)).toBe(true);
     expect(remote.accept(frame,150)).toBe(false);expect(remote.accept({...frame,seq:0},160)).toBe(false);
