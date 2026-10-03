@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { Capacitor } from '@capacitor/core';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { WORLD, COTTAGE, nearestInteraction, roomAt, roomLabel, cottageRooms, cottageFurniture, cottageInteractions } from '@paw/shared';
 import type { HouseSnapshot, Point } from '@paw/shared';
@@ -42,6 +43,11 @@ export default function World({ client, api, snapshot, onSnapshot, onBack, onLog
   useEffect(() => () => { if (hintTimer.current !== null) clearTimeout(hintTimer.current);if(roomTimer.current!==null)clearTimeout(roomTimer.current); }, []);
   const [arrow, setArrow] = useState<{ angle: number; name: string } | null>(null);
   const [knob, setKnob] = useState<Point>({ x: 0, y: 0 });
+  const native=Capacitor.isNativePlatform()||window.matchMedia('(pointer: coarse)').matches;
+  const knobElement=useRef<HTMLSpanElement>(null);
+  const performanceReading=useRef('Walk for a few seconds to measure.');
+  const [performanceText,setPerformanceText]=useState(performanceReading.current);
+  const updateKnob=(point:Point)=>{if(native&&knobElement.current)knobElement.current.style.transform=`translate(${point.x}px, ${point.y}px)`;else setKnob(point);};
   useEffect(() => { void readSettings().then(setSettings); }, []);
   useEffect(() => { if(open)dialog.current?.focus(); }, [open]);
   useEffect(() => {
@@ -57,9 +63,10 @@ export default function World({ client, api, snapshot, onSnapshot, onBack, onLog
         private drawings = new Map<string, { body: import('phaser').GameObjects.Container; art: import('phaser').GameObjects.Graphics; label: import('phaser').GameObjects.Text; frame?:string }>();
         private keys!: Record<string, import('phaser').Input.Keyboard.Key>;
         private lastArrow = 0;
+        private movingFrames:number[]=[];
         create() {
           const geometry=controller.geometry;
-          if(controller.cottage)this.cottageArt=new CottageArt(this,id=>{if(openRef.current)return;if(targetRef.current===id)interactRef.current();else showInteractionHint('Move closer to interact.');});
+          if(controller.cottage)this.cottageArt=new CottageArt(this,id=>{if(openRef.current)return;if(targetRef.current===id)interactRef.current();else showInteractionHint('Move closer to interact.');},native);
           else {
           const floor = this.add.graphics();
           floor.fillStyle(0xe3ccd0).fillRoundedRect(20, 20, WORLD.width - 40, WORLD.height - 40, 36);
@@ -127,6 +134,15 @@ export default function World({ client, api, snapshot, onSnapshot, onBack, onLog
           const occupied=current.world?.slots.some(s=>s.user_id===snapshot.user_id&&s.session_id===current.sessionId);
           this.cottageArt?.update(actors,occupied?null:targetRef.current??null,current.world);
           const self = actors.find(actor => actor.local);
+          if(native&&self?.animation==='walk'&&current.ready&&current.active){
+            this.movingFrames.push(this.game.loop.rawDelta);
+            if(this.movingFrames.length>=120){
+              const average=this.movingFrames.reduce((sum,value)=>sum+value,0)/this.movingFrames.length;
+              const slow=this.movingFrames.filter(value=>value>34).length;
+              performanceReading.current=`0.2.2 · ${this.game.renderer.type===Phaser.WEBGL?'WebGL':'Canvas'} · Walking ${Math.round(1000/average)} FPS · ${slow}/120 frames over 34ms`;
+              this.movingFrames=[];
+            }
+          }
           if (self) { const camera = this.cameras.main; const blend = settingsRef.current.reducedMotion ? 1 : 1 - Math.exp(-Math.min(this.game.loop.rawDelta,250) / 1000 * 8); camera.scrollX += (self.point.x - camera.width / 2 - camera.scrollX) * blend; camera.scrollY += (self.point.y - camera.height / 2 - camera.scrollY) * blend; }
           if (time - this.lastArrow > 200) {
             this.lastArrow = time; const partner = actors.find(actor => !actor.local); const camera = this.cameras.main;
@@ -135,7 +151,7 @@ export default function World({ client, api, snapshot, onSnapshot, onBack, onLog
           }
         }
       }
-      game = new Phaser.Game({ type: Phaser.AUTO, parent: host.current, backgroundColor: '#f8f0f2', width: host.current.clientWidth, height: host.current.clientHeight, scale: { mode: Phaser.Scale.RESIZE }, scene: HouseScene, audio: { noAudio: true }, input: { keyboard: { capture: [] }, touch: { capture: false } } });
+      game = new Phaser.Game({ type: Phaser.AUTO, ...(native?{render:{powerPreference:'high-performance' as const}}:{}), parent: host.current, backgroundColor: '#f8f0f2', width: host.current.clientWidth, height: host.current.clientHeight, scale: { mode: Phaser.Scale.RESIZE }, scene: HouseScene, audio: { noAudio: true }, input: { keyboard: { capture: [] }, touch: { capture: false } } });
     }).catch(() => { if (!cancelled) setHint('The room could not load. Go back and try again.'); });
     return () => { cancelled = true; input.current = { x: 0, y: 0 }; stopView(); game?.destroy(true); runtime.current = null; void controller.dispose(); };
   }, [client, api]);
@@ -148,10 +164,10 @@ export default function World({ client, api, snapshot, onSnapshot, onBack, onLog
   interactRef.current=()=>{if(occupied)void runtime.current?.cancelInteraction().catch(error=>showInteractionHint(error.message));else if(target)void runtime.current?.interact(target).catch(error=>showInteractionHint(error.message));else showInteractionHint();};
   const room=cottage&&self?roomAt(self.point):'';
   useEffect(()=>{if(!room)return;setRoomToast(roomLabel(room));if(roomTimer.current!==null)clearTimeout(roomTimer.current);roomTimer.current=setTimeout(()=>setRoomToast(''),2200);},[room]);
-  const resetStick = () => { input.current = { x: 0, y: 0 }; setKnob({ x: 0, y: 0 }); };
+  const resetStick = () => { input.current = { x: 0, y: 0 }; updateKnob({ x: 0, y: 0 }); };
   return <main className={`world ${cottage?'cottage-world':''}`} data-testid="world" data-room={room} data-self-x={self?.point.x.toFixed(1)} data-self-y={self?.point.y.toFixed(1)} data-partner-x={partner?.point.x.toFixed(1)} data-partner-y={partner?.point.y.toFixed(1)} data-sent={view?.sent} data-received={view?.received} data-taken-over={view?.takenOver}>
     <div className="world-canvas" ref={host} aria-label={cottage?'Shared five-room home':'Shared home movement room'} role="img" />
-    <button className="settings-icon" aria-label="Settings" onClick={() => { resetStick(); setOpen(true); }}>⚙</button>
+    <button className="settings-icon" aria-label="Settings" onClick={() => { resetStick();setPerformanceText(performanceReading.current); setOpen(true); }}>⚙</button>
     {cottage&&<button className="minimap-icon" aria-label="Map" aria-expanded={minimap} onClick={()=>setMinimap(!minimap)}>⌑</button>}
     {roomToast&&<div className="room-toast" role="status">{roomToast}</div>}
     {cottage&&minimap&&<svg className="minimap" role="img" aria-label="House map with player locations" viewBox={`0 0 ${COTTAGE.width} ${COTTAGE.height}`}>
@@ -164,8 +180,8 @@ export default function World({ client, api, snapshot, onSnapshot, onBack, onLog
     <div className="joystick" style={{ width: settings.joystickSize, height: settings.joystickSize }} role="button" tabIndex={0} aria-label="Move" onPointerDown={event => { event.currentTarget.setPointerCapture(event.pointerId); }} onPointerMove={event => {
       if (!event.currentTarget.hasPointerCapture(event.pointerId)) return; const box = event.currentTarget.getBoundingClientRect(); const radius = box.width * .32;
       let x = (event.clientX - box.left - box.width / 2) / radius; let y = (event.clientY - box.top - box.height / 2) / radius; const length = Math.hypot(x, y); if (length > 1) { x /= length; y /= length; }
-      input.current = length < .15 ? { x: 0, y: 0 } : { x, y }; setKnob({ x: x * radius, y: y * radius });
-    }} onPointerUp={resetStick} onPointerCancel={resetStick} onLostPointerCapture={resetStick} onBlur={resetStick}><span style={{ transform: `translate(${knob.x}px, ${knob.y}px)` }} /></div>
+      input.current = length < .15 ? { x: 0, y: 0 } : { x, y }; updateKnob({ x: x * radius, y: y * radius });
+    }} onPointerUp={resetStick} onPointerCancel={resetStick} onLostPointerCapture={resetStick} onBlur={resetStick}><span ref={knobElement} style={{ transform: `translate(${knob.x}px, ${knob.y}px)` }} /></div>
     <button className="interact" disabled={view?.interacting||(cottage&&!view?.ready)} onClick={()=>interactRef.current()}>{occupied?'Leave':target?.label??'Interact'}</button>
     <div className="world-message" role="status">{view?.takenOver ? <>Playing on another device. <button onClick={() => void runtime.current?.takeControl().catch(error => setHint(error.message))}>Play here</button></> : view?.message || hint}</div>
     {view?.connection === 'error' && <button className="reconnect" onClick={() => void runtime.current?.reconnect()}>Reconnect</button>}
@@ -177,6 +193,6 @@ export default function World({ client, api, snapshot, onSnapshot, onBack, onLog
       const first=controls[0],last=controls.at(-1);
       if(event.shiftKey&&(document.activeElement===first||document.activeElement===event.currentTarget)){event.preventDefault();last?.focus();}
       else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first?.focus();}
-    }}><h2>Settings</h2><label><input type="checkbox" checked={settings.nameTags} onChange={event => updateSettings({ ...settings, nameTags: event.target.checked })} /> Names</label><label><input type="checkbox" checked={settings.reducedMotion} onChange={event => updateSettings({ ...settings, reducedMotion: event.target.checked })} /> Reduced motion</label><label>Control size<select value={settings.joystickSize} onChange={event => updateSettings({ ...settings, joystickSize: Number(event.target.value) })}><option value={96}>Small</option><option value={116}>Medium</option><option value={136}>Large</option></select></label><div className="actions"><button onClick={() => setOpen(false)}>Back</button><button onClick={onBack}>{snapshot.status === 'pending' ? 'Invite partner' : 'Home'}</button><button onClick={() => { setOpen(false); void runtime.current?.reconnect(); }}>Reconnect</button><button onClick={() => void onLogout()}>Sign out</button></div></section></div>}
+    }}><h2>Settings</h2>{native&&<p style={{fontSize:12}}>{performanceText}</p>}<label><input type="checkbox" checked={settings.nameTags} onChange={event => updateSettings({ ...settings, nameTags: event.target.checked })} /> Names</label><label><input type="checkbox" checked={settings.reducedMotion} onChange={event => updateSettings({ ...settings, reducedMotion: event.target.checked })} /> Reduced motion</label><label>Control size<select value={settings.joystickSize} onChange={event => updateSettings({ ...settings, joystickSize: Number(event.target.value) })}><option value={96}>Small</option><option value={116}>Medium</option><option value={136}>Large</option></select></label><div className="actions"><button onClick={() => setOpen(false)}>Back</button><button onClick={onBack}>{snapshot.status === 'pending' ? 'Invite partner' : 'Home'}</button><button onClick={() => { setOpen(false); void runtime.current?.reconnect(); }}>Reconnect</button><button onClick={() => void onLogout()}>Sign out</button></div></section></div>}
   </main>;
 }

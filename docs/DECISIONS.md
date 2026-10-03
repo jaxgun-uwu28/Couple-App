@@ -1,5 +1,9 @@
 # DECISIONS
 
+## 2026-10-03 — Android-only performance follow-up
+
+User reports 0.2.1 phone movement remains choppy. User confirmed Infinix Note 30, Helio G99, 8GB RAM, Android 14; Chrome is equally choppy, so this is not assumed to be a native wrapper issue. Actual device frame rate is unknown. Preserve desktop rendering, movement/network/database behavior and visual quality. When Capacitor.isNativePlatform() or primary pointer is coarse, bake static furniture/decorations to bounded RenderTextures at their original depths, retaining live doors/walls/toggles/outline; avoid React reconciliation on joystick pointer moves by updating its knob transform directly. Request high-performance WebGL context without disabling antialiasing or forcing a renderer. Add phone-only local Settings diagnostics for renderer, latest moving frame rate and slow frames; no uploads or realtime telemetry. Verify cached geometry/occlusion and cleanup in an isolated real-renderer browser test, preserve normal regression coverage and deliver a matching APK. Do not claim a phone FPS improvement without the user's measurement.
+
 ## 2026-10-03 — Phase 2 device feedback corrections
 
 User reported phone frame stutter, excessive wall transparency, persistent activity outlines and long sitting diverging between devices; requested slightly faster walking. Preserve map, art direction and stack. Bake the static floor into one scene-owned texture, avoid rebuilding unchanged dynamic graphics/labels, and use elapsed frame time for camera following. Keep walls at least 85% opaque and fade only where an online avatar's head is actually occluded. Increase cottage speed by 10%, from 120 to 132px/s. Hide nearest-object outlines while the local player occupies an activity slot; toggle objects keep their ordinary prompts.

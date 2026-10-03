@@ -11,7 +11,13 @@ export class CottageArt {
  private lastTarget: string|null=null;
  private lastStates='';
  private toggles: {object: typeof cottageFurniture[number];art:Phaser.GameObjects.Graphics}[]=[];
- constructor(scene: Phaser.Scene,onTap:(id:string)=>void){
+ constructor(scene: Phaser.Scene,onTap:(id:string)=>void,bakeStatic=false){
+  const bake=(g:Phaser.GameObjects.Graphics,b:{x:number;y:number;width:number;height:number},pad=12)=>{
+   if(!bakeStatic)return;
+   const x=b.x-pad,y=b.y-pad;
+   scene.add.renderTexture(x,y,Math.ceil(b.width+pad*2),Math.ceil(b.height+pad*2)).setOrigin(0).setDepth(g.depth).draw(g,-x,-y);
+   g.destroy();
+  };
   const floor=scene.add.graphics().setDepth(-1000);
   for(const room of cottageRooms){
    const fill=room.name==='bedroom'?0xe7edf3:room.name==='bathroom'?0xf3dce4:room.name==='hall'?0xfff4ed:0xf1e3d0;
@@ -32,6 +38,7 @@ export class CottageArt {
    else if(d.type==='window'){g.fillStyle(colors.sky).fillRoundedRect(d.x,d.y,d.width+12,d.height,4);g.lineStyle(3,colors.cream).lineBetween(d.x,d.y+d.height/2,d.x+12,d.y+d.height/2);}
    else if(d.type==='plush'){g.fillStyle(colors.rose).fillCircle(d.x+18,d.y+23,18).fillCircle(d.x+6,d.y+7,8).fillCircle(d.x+30,d.y+7,8);g.fillStyle(colors.dark).fillCircle(d.x+12,d.y+22,2).fillCircle(d.x+24,d.y+22,2);}
    else {g.fillStyle(d.type==='cabinet'?colors.wood:colors.gold).fillRoundedRect(d.x,d.y,Math.max(12,d.width),Math.max(12,d.height),4);g.lineStyle(2,colors.dark,.4).strokeRoundedRect(d.x,d.y,Math.max(12,d.width),Math.max(12,d.height),4);}
+   bake(g,{...d,width:Math.max(40,d.width+12),height:Math.max(48,d.height)},24);
   }
   for(const b of cottageFurniture){
    const g=scene.add.graphics().setDepth(b.y+b.height);const {x,y,width:w,height:h}=b;
@@ -58,6 +65,7 @@ export class CottageArt {
     case 'toilet':inset(0xe5dbe1,x+8,y+6,w-16,25);g.fillStyle(0xcacbd6).fillEllipse(x+w/2,y+h*.64,w-20,h*.45);g.fillStyle(colors.cream).fillEllipse(x+w/2,y+h*.64,w-30,h*.3);break;
     case 'laundry':case 'trash':g.lineStyle(3,colors.dark,.25).lineBetween(x+7,y+10,x+w-7,y+10);inset(colors.rose,x+10,y+16,w-20,h-26);break;
    }
+   bake(g,b,b.type==='lamp'||b.type==='plant'?48:12);
    if(['fridge','lamp','tv','toilet'].includes(b.type))this.toggles.push({object:b,art:scene.add.graphics().setDepth(b.y+b.height+1)});
    scene.add.zone(x+w/2,y+h/2,w,h).setInteractive().on('pointerdown',()=>onTap(b.name));
   }
