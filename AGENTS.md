@@ -33,3 +33,6 @@ Feature works - UI works - multiplayer sync works where applicable - mobile work
 
 ## End-of-phase report (required)
 Implemented - Files Changed - Database Changes - API/RPC Changes - Realtime Changes - Tests - Known Issues - Next Phase. Then WAIT.
+
+## APK artifact cleanup (user instruction, 2026-10-03)
+When producing an updated APK, verify the new artifact first, then delete obsolete local APKs and extracted APK duplicates under this repository's artifacts directory. Keep only the latest verified deliverable APK. Verify resolved paths stay inside that directory and preserve the new deliverable before deleting anything. Do not delete the installed phone app or modify signing credentials as part of artifact cleanup.
