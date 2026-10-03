@@ -1,0 +1,17 @@
+import {z} from 'zod';
+export const skinTones=['#f8dfc9','#edc5a5','#d9ad86','#c38d66','#a9704e','#905d42','#724632','#513025'] as const;
+export const characterColors=['#dc96ae','#9bbbd0','#d9b875','#fff9fa','#725e6b','#416c60','#d4b6a0','#a85d68','#52768c','#342e39','#8e76a5','#c47d50'] as const;
+export const hairNames=['Tousled','Bob','Curls','Long','Ponytail','Bun','Side sweep','Short'] as const;
+const index=(max:number)=>z.number().int().min(0).max(max);
+export const appearanceSchema=z.object({skin:index(7),body:index(2),height:index(2),hair:index(7),hairColor:index(11),eyes:index(5),mouth:index(3),glasses:index(2),shirt:index(2),shirtColor:index(11),pants:index(2),pantsColor:index(11),shoes:index(2),shoesColor:index(11)}).strict();
+export type Appearance=z.infer<typeof appearanceSchema>;
+export const defaultAppearance=(seat=1):Appearance=>({skin:1,body:1,height:1,hair:seat===1?5:0,hairColor:9,eyes:0,mouth:0,glasses:0,shirt:1,shirtColor:seat===1?0:1,pants:0,pantsColor:seat===1?6:9,shoes:0,shoesColor:6});
+export const emotes=['love','hug','wave','laugh','cry','angry','please','clap','dance','yawn','kiss'] as const;
+export type Emote=typeof emotes[number];
+export const emoteIcons:Record<Emote,string>={love:'❤️',hug:'🫂',wave:'👋',laugh:'😂',cry:'😭',angry:'😡',please:'🥺',clap:'👏',dance:'💃',yawn:'😴',kiss:'😘'};
+export const emoteSchema=z.object({couple_id:z.uuid(),user_id:z.uuid(),session_id:z.uuid(),request_id:z.uuid(),emote:z.enum(emotes)}).strict();
+export const socialSchema=z.object({id:z.uuid(),kind:z.enum(['hug','cuddle']),status:z.enum(['pending','active']),sender_id:z.uuid(),recipient_id:z.uuid(),sender_session:z.uuid(),recipient_session:z.uuid().nullable(),object_id:z.enum(['sofa','bed']).nullable(),sender_x:z.number().finite(),sender_y:z.number().finite(),recipient_x:z.number().finite().nullable(),recipient_y:z.number().finite().nullable(),started_at:z.iso.datetime({offset:true}).nullable(),expires_at:z.iso.datetime({offset:true})}).strict();
+export type SocialAction=z.infer<typeof socialSchema>;
+export const charactersSchema=z.object({couple_id:z.uuid(),server_time:z.iso.datetime({offset:true}),profiles:z.array(z.object({user_id:z.uuid(),configured:z.boolean(),appearance:appearanceSchema}).strict()).min(1).max(2),presets:z.array(z.object({slot:index(4),appearance:appearanceSchema}).strict()).max(5),social:socialSchema.nullable()}).strict();
+export type CharactersState=z.infer<typeof charactersSchema>;
+export const characterResultSchema=z.object({ok:z.boolean(),code:z.string().optional()}).strict();

@@ -38,6 +38,6 @@ jobs:
         working-directory: apps/web/android
       - uses: actions/upload-artifact@v4
         with:
-          name: paw-and-us-phase2-debug
+          name: paw-and-us-phase3-debug
           path: apps/web/android/app/build/outputs/apk/debug/app-debug.apk
           retention-days: 3

@@ -1,9 +1,9 @@
 import type { RealtimeChannel, SupabaseClient } from '@supabase/supabase-js';
-import { coupleIdSchema, motionEvents, motionSchema, presenceSchema, syncRequestSchema, syncResponseSchema, objectChangedSchema } from '@paw/shared';
-import type { ConnectionState, HouseEventMap, HousePresence, MotionEvent } from '@paw/shared';
+import { coupleIdSchema, motionEvents, motionSchema, presenceSchema, syncRequestSchema, syncResponseSchema, objectChangedSchema, emoteSchema } from '@paw/shared';
+import type { ConnectionState, HouseEventMap, HousePresence, MotionEvent, Emote } from '@paw/shared';
 
 export type HouseMessage = { event: MotionEvent; payload: HouseEventMap[MotionEvent] } |
-  { event: 'sync_request'; payload: HouseEventMap['sync_request'] } | { event: 'sync_response'; payload: HouseEventMap['sync_response'] } | {event:'object_changed';payload:HouseEventMap['object_changed']};
+  { event: 'sync_request'; payload: HouseEventMap['sync_request'] } | { event: 'sync_response'; payload: HouseEventMap['sync_response'] } | {event:'object_changed';payload:HouseEventMap['object_changed']} | {event:'character_changed';payload:HouseEventMap['object_changed']} | {event:'emote';payload:HouseEventMap['object_changed'] & {emote:Emote}};
 export interface HouseRealtimeTransport {
   connect(): Promise<void>; join(coupleId: string): Promise<void>; send(message: HouseMessage): Promise<void>;
   track(value: HousePresence): Promise<void>; presence(): HousePresence[];
@@ -36,6 +36,8 @@ export class HouseTransport implements HouseRealtimeTransport {
     this.setState('connecting');
     const channel=this.client.channel(`house:${coupleId}${this.mapId==='cottage-v1'?':cottage-v1':''}`,{config:{private:true,broadcast:{ack:true,self:false}}});
     this.channel=channel;
+    channel.on('broadcast',{event:'character_changed'},({payload}:{payload:unknown})=>{const parsed=objectChangedSchema.safeParse(payload);if(this.channel===channel&&parsed.success)this.messages.forEach(listener=>listener({event:'character_changed',payload:parsed.data}));});
+    channel.on('broadcast',{event:'emote'},({payload}:{payload:unknown})=>{const parsed=emoteSchema.safeParse(payload);if(this.channel===channel&&parsed.success)this.messages.forEach(listener=>listener({event:'emote',payload:parsed.data}));});
     channel.on('broadcast',{event:'object_changed'},({payload}:{payload:unknown})=>{const parsed=objectChangedSchema.safeParse(payload);if(this.channel===channel&&parsed.success)this.messages.forEach(listener=>listener({event:'object_changed',payload:parsed.data}));});
     for (const event of motionEvents) channel.on('broadcast',{event},({payload}: {payload:unknown})=>{
       if (this.channel!==channel) return;
@@ -62,7 +64,8 @@ export class HouseTransport implements HouseRealtimeTransport {
   }
   async send(message: HouseMessage) {
     if(!this.channel||this.state!=='connected')throw new Error('Reconnect to play together.');
-    if(message.event==='object_changed')objectChangedSchema.parse(message.payload);
+    if(message.event==='object_changed'||message.event==='character_changed')objectChangedSchema.parse(message.payload);
+    else if(message.event==='emote')emoteSchema.parse(message.payload);
     else if(message.event==='sync_request')syncRequestSchema.parse(message.payload);
     else if(message.event==='sync_response')syncResponseSchema.parse(message.payload);
     else motionSchema.parse(message.payload);

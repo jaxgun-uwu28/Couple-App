@@ -1,15 +1,28 @@
 import { Capacitor } from '@capacitor/core';
 import { COTTAGE, WORLD, cottageSpawn, roomAt, MotionBudget, RemoteMotion, clampPoint, facing, movePoint, preferredSessions, spawn, supportsMotionClock, velocity } from '@paw/shared';
-import type { ConnectionState, HousePresence, HouseSnapshot, Motion, MotionEvent, Point, WorldState, CottageInteraction } from '@paw/shared';
+import type { ConnectionState, HousePresence, HouseSnapshot, Motion, MotionEvent, Point, WorldState, CottageInteraction, CharactersState, Appearance, Emote } from '@paw/shared';
 import type { HouseMessage, HouseRealtimeTransport } from '../infra/HouseTransport';
 import type { HouseApi } from '../infra/HouseApi';
 import { watchForeground } from '../infra/lifecycle';
 
-export type Actor = { id: string; name: string; seat: number; point: Point; direction: Motion['direction']; animation: Motion['animation']; online: boolean; away: boolean; local: boolean; lastSeen: number };
-export type RuntimeView = { connection: ConnectionState; ready: boolean; message: string; takenOver: boolean; active: boolean; sent: number; received: number; actors: Actor[]; world: WorldState|null; sessionId:string; interacting:boolean };
+export type Actor = { id: string; name: string; seat: number; point: Point; direction: Motion['direction']; animation: Motion['animation']; online: boolean; away: boolean; afk:boolean; local: boolean; lastSeen: number };
+export type RuntimeView = { connection: ConnectionState; ready: boolean; message: string; takenOver: boolean; active: boolean; sent: number; received: number; actors: Actor[]; world: WorldState|null; characters:CharactersState|null; reactions:Record<string,{emote:Emote;at:number;until:number}>; sessionId:string; interacting:boolean };
 type Remote = { motion: RemoteMotion; point: Point; offlineSince: number | null; online: boolean; away: boolean; lastSeen: number };
 
 export class HouseRuntime {
+  private charactersValue:CharactersState|null=null;
+  private characterRead:Promise<void>|null=null;
+  private characterOffset=0;
+  private characterExpiry=-Infinity;
+  private characterTimer:ReturnType<typeof setTimeout>|null=null;
+  private lastCharacterHint=-Infinity;
+  private reactions:Record<string,{emote:Emote;at:number;until:number}>={};
+  private lastEmote=new Map<string,number>();
+  private socialBusy=false;
+  private socialRenew:Promise<void>|null=null;
+  private lastSocialRenew=0;
+  private lastInput=performance.now();
+  private afk=false;
   private worldValue:WorldState|null=null;
   private worldRead:Promise<void>|null=null;
   private interactionBusy=false;
@@ -50,7 +63,7 @@ export class HouseRuntime {
   private announced = false;
   private queuedRecovery = false;
   private lastUnknownRefresh = -Infinity;
-  constructor(private transport:HouseRealtimeTransport,private api:Pick<HouseApi,'snapshot'> & Partial<Pick<HouseApi,'world'|'interact'>>,snapshot:HouseSnapshot,private onSnapshot:(snapshot:HouseSnapshot|null)=>void) {
+  constructor(private transport:HouseRealtimeTransport,private api:Pick<HouseApi,'snapshot'> & Partial<Pick<HouseApi,'world'|'interact'|'characters'|'saveCharacter'|'social'>>,snapshot:HouseSnapshot,private onSnapshot:(snapshot:HouseSnapshot|null)=>void) {
     this.snapshotValue=snapshot;
     const member=snapshot.members.find(item=>item.user_id===snapshot.user_id)!;
     this.local={user_id:member.user_id,couple_id:snapshot.couple_id,session_id:crypto.randomUUID(),seq:0,...this.spawnPoint(member.seat),vx:0,vy:0,direction:'down',animation:'idle',room:this.cottage?'hall':'phase1-room'};
@@ -63,7 +76,7 @@ export class HouseRuntime {
     for(const id of this.remotes.keys())if(!this.snapshotValue.members.some(member=>member.user_id===id))this.remotes.delete(id);
   }
   private currentPresence(): HousePresence {
-    return {user_id:this.local.user_id,session_id:this.local.session_id,joined_at:this.joinedAt,room:this.local.room,status:this.active&&!this.takeover?'online':'away',device:Capacitor.isNativePlatform()?'android':'web',app_version:this.cottage?'phase2':'phase1',motion_clock:1};
+    return {user_id:this.local.user_id,session_id:this.local.session_id,joined_at:this.joinedAt,room:this.local.room,status:this.active&&!this.takeover?'online':'away',device:Capacitor.isNativePlatform()?'android':'web',app_version:this.cottage?'phase2':'phase1',motion_clock:1,...(this.api.characters?{afk:this.afk}:{})};
   }
   private notify(){if(!this.disposed)this.listeners.forEach(listener=>listener(this.view()));}
   onView(listener:(view:RuntimeView)=>void){this.listeners.add(listener);listener(this.view());return()=>{this.listeners.delete(listener);};}
@@ -75,10 +88,11 @@ export class HouseRuntime {
       const remote=this.remotes.get(member.user_id)!;
       if(!self && remote.offlineSince!==null && now-remote.offlineSince>30000)continue;
       const frame=self&&!this.takeover?this.local:remote.motion.displayFrame;
-      actors.push({id:member.user_id,name:self?'You':member.display_name,seat:member.seat,point:self&&!this.takeover?{x:this.local.x,y:this.local.y}:remote.point,direction:frame?.direction??'down',animation:frame?.animation??'idle',online:self&&!this.takeover?this.ready&&this.connection==='connected':remote.online,away:self?(!this.active||this.takeover):remote.away,local:self,lastSeen:self&&this.active?Date.now():remote.lastSeen});
+      actors.push({id:member.user_id,name:self?'You':member.display_name,seat:member.seat,point:self&&!this.takeover?{x:this.local.x,y:this.local.y}:remote.point,direction:frame?.direction??'down',animation:frame?.animation??'idle',online:self&&!this.takeover?this.ready&&this.connection==='connected':remote.online,away:self?(!this.active||this.takeover):remote.away,afk:self&&!this.takeover?this.afk:!!this.sessions.get(member.user_id)?.afk,local:self,lastSeen:self&&this.active?Date.now():remote.lastSeen});
     }
     const world=this.worldValue?{...this.worldValue,slots:this.worldValue.slots.filter(slot=>Date.parse(slot.expires_at)>Date.now()+this.worldOffset)}:null;
-    return {connection:this.connection,ready:this.ready,message:this.feedback,takenOver:this.takeover,active:this.active,sent:this.sent,received:this.received,actors,world,sessionId:this.local.session_id,interacting:this.interactionBusy};
+    const characters=this.charactersValue?{...this.charactersValue,social:this.charactersValue.social&&Date.parse(this.charactersValue.social.expires_at)>Date.now()+this.characterOffset?this.charactersValue.social:null}:null;
+    return {connection:this.connection,ready:this.ready,message:this.feedback,takenOver:this.takeover,active:this.active,sent:this.sent,received:this.received,actors,world,characters,reactions:this.reactions,sessionId:this.local.session_id,interacting:this.interactionBusy||this.socialBusy};
   }
   async start(){
     this.cleanup.push(this.transport.onState(state=>{
@@ -107,7 +121,7 @@ export class HouseRuntime {
         if(this.disposed||generation!==this.generation)return;
         if(!next||next.couple_id!==this.snapshotValue.couple_id){this.onSnapshot(next);return;}
         this.snapshotValue=next;this.prepareRemotes();this.onSnapshot(next);
-        if(this.cottage)await this.refreshWorld();
+        if(this.cottage){await this.refreshWorld();await this.refreshCharacters();}
         // Stamp a new device session once from a fresh RPC, never from cache.
         if(!this.timestampVerified){this.joinedAt=new Date(next.server_time).toISOString();this.timestampVerified=true;this.takeover=false;}
         await this.transport.track(this.currentPresence());
@@ -117,6 +131,9 @@ export class HouseRuntime {
         // Observing/losing devices never release the winning device's activity.
         const stale=this.worldValue?.slots.find(slot=>slot.user_id===this.local.user_id&&slot.session_id!==this.local.session_id);
         if(this.cottage&&!this.takeover&&stale&&this.api.interact){await this.api.interact('cancel',null,null,stale.session_id,this.local);await this.refreshWorld();await this.worldChanged();}
+        const social=this.charactersValue?.social;
+        const oldSession=social?.sender_id===this.local.user_id?social.sender_session:social?.recipient_id===this.local.user_id?social.recipient_session:null;
+        if(!this.takeover&&social&&oldSession&&oldSession!==this.local.session_id&&this.api.social){await this.api.social('cancel',null,social.id,oldSession,this.local);await this.refreshCharacters();await this.characterChanged();}
         this.stopMotion();this.budget.reset(this.local,performance.now());
         if(this.active&&!this.takeover){
           if(!this.announced){await this.sendMotion('PLAYER_JOINED');this.announced=true;}
@@ -167,12 +184,19 @@ export class HouseRuntime {
   }
   private receive(message:HouseMessage){
     if(this.disposed)return;
+    if(message.event==='character_changed'||message.event==='emote'){
+      const p=message.payload;if(!this.cottage||p.couple_id!==this.local.couple_id||this.sessions.get(p.user_id)?.session_id!==p.session_id||this.seenWorld.has(p.request_id)||!this.active)return;
+      this.seenWorld.add(p.request_id);if(this.seenWorld.size>128)this.seenWorld.delete(this.seenWorld.values().next().value!);
+      if(message.event==='emote'){const now=performance.now();if(now-(this.lastEmote.get(p.user_id)??-Infinity)<1000)return;this.lastEmote.set(p.user_id,now);this.reactions={...this.reactions,[p.user_id]:{emote:message.payload.emote,at:now,until:now+3000}};this.received++;this.notify();}
+      else if(this.characterTimer===null)this.characterTimer=setTimeout(()=>{this.characterTimer=null;this.lastCharacterHint=performance.now();void this.refreshCharacters().catch(()=>{this.feedback='Characters could not sync. Reconnect.';this.notify();});},Math.max(0,500-(performance.now()-this.lastCharacterHint)));
+      return;
+    }
     if(message.event==='object_changed'){
       const p=message.payload;
       if(!this.cottage||p.couple_id!==this.snapshotValue.couple_id||this.sessions.get(p.user_id)?.session_id!==p.session_id||this.seenWorld.has(p.request_id)||!this.active)return;
       this.seenWorld.add(p.request_id);if(this.seenWorld.size>128)this.seenWorld.delete(this.seenWorld.values().next().value!);
       const delay=Math.max(0,500-(performance.now()-this.lastWorldHint));
-      if(this.refreshTimer===null)this.refreshTimer=setTimeout(()=>{this.refreshTimer=null;this.lastWorldHint=performance.now();void this.refreshWorld().catch(()=>{this.feedback='House objects could not sync. Reconnect.';this.notify();});},delay);
+      if(this.refreshTimer===null)this.refreshTimer=setTimeout(()=>{this.refreshTimer=null;this.lastWorldHint=performance.now();void this.refreshWorld().then(()=>this.refreshCharacters()).catch(()=>{this.feedback='House objects could not sync. Reconnect.';this.notify();});},delay);
       return;
     }
     if(message.event==='sync_request'){
@@ -180,7 +204,7 @@ export class HouseRuntime {
       if(!this.snapshotValue.members.some(member=>member.user_id===request.user_id)||request.session_id===this.local.session_id||!this.active||this.takeover)return;
       const now=performance.now();if(now-(this.lastSyncResponse.get(request.user_id)??-Infinity)<1000)return;
       this.lastSyncResponse.set(request.user_id,now);
-      if(this.cottage)void this.refreshWorld().then(()=>this.worldChanged()).catch(()=>undefined);
+      if(this.cottage){void this.refreshWorld().then(()=>this.worldChanged()).catch(()=>undefined);void this.refreshCharacters().then(()=>this.characterChanged()).catch(()=>undefined);}
       void this.send({event:'sync_response',payload:{request_id:request.request_id,to_session:request.session_id,player:this.packet()}}).catch(()=>undefined);
       return;
     }
@@ -198,6 +222,7 @@ export class HouseRuntime {
     const newSession=remote.motion.frame?.session_id!==frame.session_id;
     const receivedAt=performance.now();
     if(remote.motion.accept(frame,receivedAt,initial)){
+      if(frame.animation==='walk'&&this.reactions[frame.user_id]?.emote!=='dance'){this.reactions={...this.reactions};delete this.reactions[frame.user_id];}
       if(newSession)remote.point=remote.motion.sample(receivedAt,0);
       this.received++;remote.lastSeen=Date.now();
       if(message.event==='PLAYER_LEFT'){remote.motion.stop();remote.online=false;remote.offlineSince=performance.now();}
@@ -220,6 +245,21 @@ export class HouseRuntime {
     return this.worldRead;
   }
   private ownSlot(){return this.view().world?.slots.find(s=>s.user_id===this.local.user_id&&s.session_id===this.local.session_id);}
+  private async refreshCharacters(){
+    if(!this.api.characters)return;if(this.characterRead)return this.characterRead;
+    this.characterRead=(async()=>{const state=await this.api.characters!(this.local.couple_id);if(this.disposed)return;this.charactersValue=state;this.characterOffset=Date.parse(state.server_time)-Date.now();this.notify();})().finally(()=>{this.characterRead=null;});return this.characterRead;
+  }
+  private async characterChanged(){if(this.api.characters&&this.connection==='connected'&&!this.disposed)await this.send({event:'character_changed',payload:{couple_id:this.local.couple_id,user_id:this.local.user_id,session_id:this.local.session_id,request_id:crypto.randomUUID()}});}
+  async saveAppearance(appearance:Appearance,preset:number|null=null){if(!this.ready||this.takeover||!this.api.saveCharacter)throw new Error('Reconnect before changing your character.');await this.api.saveCharacter(appearance,preset);await this.refreshCharacters();await this.characterChanged();}
+  private noteInput(now:number){this.lastInput=now;if(this.afk){this.afk=false;void this.transport.track(this.currentPresence()).catch(()=>undefined);}}
+  touchInput(){this.noteInput(performance.now());}
+  async emote(emote:Emote){if(!this.ready||!this.active||this.takeover)return;const now=performance.now();if(now-(this.lastEmote.get(this.local.user_id)??-Infinity)<1000)return;this.noteInput(now);this.lastEmote.set(this.local.user_id,now);this.reactions={...this.reactions,[this.local.user_id]:{emote,at:now,until:now+3000}};await this.send({event:'emote',payload:{couple_id:this.local.couple_id,user_id:this.local.user_id,session_id:this.local.session_id,request_id:crypto.randomUUID(),emote}});this.notify();}
+  async social(action:'request'|'accept'|'ignore'|'cancel',kind:'hug'|'cuddle'|null=null){
+    if(this.socialRenew)await this.socialRenew;if(!this.api.social||this.takeover||this.connection!=='connected'||((action==='request'||action==='accept')&&(!this.ready||!this.active)))throw new Error('Reconnect to play together.');if(this.socialBusy)return;
+    this.socialBusy=true;this.stopMotion();this.lastInput=performance.now();this.notify();
+    try{await this.refreshCharacters();const row=this.view().characters?.social;if(action!=='request'&&!row)return;await this.api.social(action,kind,row?.id??null,this.local.session_id,this.local);await this.refreshCharacters();this.lastSocialRenew=performance.now();await this.characterChanged();}finally{this.socialBusy=false;this.notify();}
+  }
+  private async cancelSocial(){const row=this.view().characters?.social;if(!row)return;await this.social(row.status==='pending'&&row.recipient_id===this.local.user_id?'ignore':'cancel');}
   async interact(target:CottageInteraction){
     if(!this.cottage||!this.ready||!this.active||this.takeover||!this.api.interact)throw new Error('Reconnect before interacting.');
     if(this.interactionBusy)return;
@@ -229,6 +269,7 @@ export class HouseRuntime {
     finally{this.interactionBusy=false;this.notify();}
   }
   async cancelInteraction(){
+    await this.cancelSocial();
     // A Leave must follow any in-flight renewal, never race it.
     if(this.renewal)await this.renewal;
     if(!this.cottage||!this.ownSlot()||!this.api.interact||this.interactionBusy)return;
@@ -248,18 +289,31 @@ export class HouseRuntime {
   tick(input:Point,dt:number,now:number){
     if(this.disposed)return;
     for(const remote of this.remotes.values())remote.point=remote.motion.sample(now,dt);
+    for(const [id,reaction] of Object.entries(this.reactions))if(reaction.until<=now){this.reactions={...this.reactions};delete this.reactions[id];}
+    const row=this.charactersValue?.social;
+    if(row&&Date.parse(row.expires_at)<=Date.now()+this.characterOffset&&Date.parse(row.expires_at)>this.characterExpiry&&this.active&&this.connection==='connected'){this.characterExpiry=Date.parse(row.expires_at);void this.refreshCharacters().catch(()=>undefined);}
     // A missed invalidation must not permanently remove a still-renewed seat.
     // Read once per observed lease expiry; an empty world schedules nothing.
     const expired=this.worldValue?.slots.map(s=>Date.parse(s.expires_at)).filter(expiry=>expiry<=Date.now()+this.worldOffset&&expiry>this.checkedExpiry)??[];
     if(this.cottage&&this.active&&this.connection==='connected'&&expired.length){this.checkedExpiry=Math.max(...expired);void this.refreshWorld().catch(()=>undefined);}
     if(this.ready&&this.active&&!this.takeover&&this.connection==='connected'){
+      if(Math.hypot(input.x,input.y)>.15){this.noteInput(now);const own=this.reactions[this.local.user_id];if(own&&own.emote!=='dance'){this.reactions={...this.reactions};delete this.reactions[this.local.user_id];}}
+      if(this.api.characters&&!this.afk&&now-this.lastInput>=120000){this.afk=true;this.reactions={...this.reactions,[this.local.user_id]:{emote:'yawn',at:now,until:now+3000}};void this.transport.track(this.currentPresence()).catch(()=>undefined);void this.send({event:'emote',payload:{couple_id:this.local.couple_id,user_id:this.local.user_id,session_id:this.local.session_id,request_id:crypto.randomUUID(),emote:'yawn'}}).catch(()=>undefined);}
+      const social=this.view().characters?.social;
+      if(social){
+        const peer=this.sessions.get(social.sender_id===this.local.user_id?social.recipient_id:social.sender_id);
+        const peerSession=social.sender_id===this.local.user_id?social.recipient_session:social.sender_session;
+        if(!peer||peer.status!=='online'||(peerSession&&peer.session_id!==peerSession)||Math.hypot(input.x,input.y)>.15){if(!this.socialBusy)void this.cancelSocial().catch(()=>undefined);}
+        else if(social.status==='active'&&now-this.lastSocialRenew>=30000&&!this.socialRenew&&this.api.social){this.lastSocialRenew=now;this.socialRenew=this.api.social('renew',null,social.id,this.local.session_id,this.local).catch(()=>undefined).then(()=>this.refreshCharacters()).then(()=>this.characterChanged()).finally(()=>{this.socialRenew=null;});}
+        if(social.status==='active'||social.sender_id===this.local.user_id)input={x:0,y:0};
+      }
       const activity=this.ownSlot();
       if(activity){
         if(Math.hypot(input.x,input.y)>.15)void this.cancelInteraction().catch(error=>{this.feedback=error.message;this.notify();});
         else if(!this.interactionBusy&&now-this.lastRenew>=30000)this.renewInteraction(activity,now);
         input={x:0,y:0};
       }
-      if(this.interactionBusy)input={x:0,y:0};
+      if(this.interactionBusy||this.socialBusy)input={x:0,y:0};
       const previous={...this.local};let v=velocity(input,this.geometry);
       // Soft-pass rather than letting a partner block a narrow doorway.
       if(this.cottage&&Array.from(this.remotes.values()).some(r=>r.online&&!r.away&&Math.hypot(r.point.x-this.local.x,r.point.y-this.local.y)<28))v={x:v.x*.6,y:v.y*.6};
@@ -278,6 +332,8 @@ export class HouseRuntime {
     const leave=this.ready&&this.active&&!this.takeover&&this.connection==='connected'?this.packet():null;
     this.disposed=true;this.generation++;this.ready=false;this.cleanup.splice(0).forEach(stop=>stop());this.listeners.clear();
     if(this.refreshTimer!==null)clearTimeout(this.refreshTimer);
+    if(this.characterTimer!==null)clearTimeout(this.characterTimer);
+    const social=this.charactersValue?.social;if(social&&this.api.social)void this.api.social(social.status==='pending'&&social.recipient_id===this.local.user_id?'ignore':'cancel',null,social.id,this.local.session_id,this.local).catch(()=>undefined);
     if(this.cottage&&this.api.interact)void this.api.interact('cancel',null,null,this.local.session_id,this.local).catch(()=>undefined);
     if(leave)void this.transport.send({event:'PLAYER_LEFT',payload:leave}).catch(()=>undefined);
     await this.transport.disconnect();

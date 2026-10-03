@@ -30,7 +30,7 @@ export const motionSchema = z.object({
   motion_ms: z.number().finite().nonnegative().optional(),
 }).strict();
 export type Motion = z.infer<typeof motionSchema>;
-export const presenceSchema = z.object({ user_id: z.uuid(), session_id: z.uuid(), joined_at: z.iso.datetime({ offset: true }), room: z.enum(['phase1-room','hall','kitchen','living','bedroom','bathroom']), status: z.enum(['online', 'away']), device: z.enum(['web', 'android']), app_version: z.enum(['phase1','phase2']), motion_clock: z.literal(1).optional() });
+export const presenceSchema = z.object({ user_id: z.uuid(), session_id: z.uuid(), joined_at: z.iso.datetime({ offset: true }), room: z.enum(['phase1-room','hall','kitchen','living','bedroom','bathroom']), status: z.enum(['online', 'away']), device: z.enum(['web', 'android']), app_version: z.enum(['phase1','phase2']), motion_clock: z.literal(1).optional(),afk:z.boolean().optional() });
 export type HousePresence = z.infer<typeof presenceSchema>;
 export const syncRequestSchema = z.object({ request_id: z.uuid(), user_id: z.uuid(), session_id: z.uuid() }).strict();
 export const syncResponseSchema = z.object({ request_id: z.uuid(), to_session: z.uuid(), player: motionSchema }).strict();

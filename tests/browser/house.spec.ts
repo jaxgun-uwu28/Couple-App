@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test';
 import type { BrowserContext, Page, WebSocketRoute } from '@playwright/test';
 import { mkdir } from 'node:fs/promises';
 import { COTTAGE,cottageInteractions } from '../../packages/shared/src/cottage';
+import {defaultAppearance} from '../../packages/shared/src/character';
 import {collides} from '../../packages/shared/src/house';
 const ids=['11111111-1111-4111-8111-111111111111','22222222-2222-4222-8222-222222222222'];
 const couple='33333333-3333-4333-8333-333333333333';const house='44444444-4444-4444-8444-444444444444';
@@ -17,6 +18,8 @@ function decode(message:string|Buffer):[string|null,string|null,string,string,Re
 function fixture(cottage=false) {
   const peers=new Set<Peer>(); let members=0;let version=1;let invite='ABCD2345';let failSnapshot=false;let signupConfirmation=true;let legacyClock=false;let clockPackets=0;
   const actions=new Map<string,unknown>();let createCount=0;
+  const looks=new Map(ids.map((id,i)=>[id,{configured:true,appearance:defaultAppearance(i+1)}]));
+  const outfits=new Map<string,Map<number,unknown>>();let social:Record<string,unknown>|null=null;
   const objectStates=new Map<string,boolean>();
   const objectSlots:{object_id:string;slot_id:string;user_id:string;session_id:string;expires_at:string}[]=[];
   const snapshot=(userId:string,since:number,known:string|null)=>{
@@ -27,7 +30,7 @@ function fixture(cottage=false) {
   const send=(peer:Peer,event:string,payload:unknown,delay=0)=>{setTimeout(()=>{try{peer.socket.send(JSON.stringify([peer.joinRef,null,peer.topic,event,payload]));}catch{/* Closed test page. */}},delay);};
   const presence=()=>{const values=Object.fromEntries([...peers].filter(peer=>peer.presence).map(peer=>[String(peer.presence!.session_id),{metas:[{...peer.presence,phx_ref:peer.presence!.session_id}]}]));for(const peer of peers)send(peer,'presence_state',values);};
   return {
-    paired(){members=2;version=2;}, fail(value:boolean){failSnapshot=value;}, confirmation(value:boolean){signupConfirmation=value;}, legacy(){legacyClock=true;}, get clocks(){return clockPackets;}, get creates(){return createCount;},
+    paired(){members=2;version=2;}, onboarding(){looks.get(ids[0]!)!.configured=false;}, fail(value:boolean){failSnapshot=value;}, confirmation(value:boolean){signupConfirmation=value;}, legacy(){legacyClock=true;}, get clocks(){return clockPackets;}, get creates(){return createCount;},
     async install(context:BrowserContext,index:number){
       const user={id:ids[index]!,aud:'authenticated',role:'authenticated',email:`player${index}@example.test`,user_metadata:{display_name:index===0?'Rose':'Sky'}};
       const encode=(value:unknown)=>Buffer.from(JSON.stringify(value)).toString('base64url');
@@ -44,6 +47,17 @@ function fixture(cottage=false) {
           const rpc=path.split('/').at(-1);const args=route.request().postDataJSON() as Record<string,unknown>;
           if(rpc==='get_house_snapshot_v2'){if(failSnapshot)await route.abort();else await route.fulfill({json:snapshot(user.id,Number(args.p_since_version),args.p_known_couple_id as string|null)});return;}
           if(rpc==='get_house_world'){await route.fulfill({json:{couple_id:couple,server_time:new Date().toISOString(),states:[...objectStates].map(([object_id,enabled])=>({object_id,enabled})),slots:objectSlots}});return;}
+          if(rpc==='get_house_characters'){if(social&&Date.parse(String(social.expires_at))<=Date.now())social=null;await route.fulfill({json:{couple_id:couple,server_time:new Date().toISOString(),profiles:ids.slice(0,members).map(id=>({user_id:id,...looks.get(id)})),presets:[...(outfits.get(user.id)??[])].map(([slot,appearance])=>({slot,appearance})),social}});return;}
+          if(rpc==='save_character'){if(args.p_preset===null)looks.set(user.id,{configured:true,appearance:args.p_appearance as ReturnType<typeof defaultAppearance>});else{if(!outfits.has(user.id))outfits.set(user.id,new Map());outfits.get(user.id)!.set(Number(args.p_preset),args.p_appearance);}await route.fulfill({json:{ok:true}});return;}
+          if(rpc==='character_action'){
+            let result:Record<string,unknown>={ok:true};
+            if(args.p_action==='request'){if(social)result={ok:false,code:'BUSY'};else social={id:args.p_idempotency_key,kind:args.p_kind,status:'pending',sender_id:user.id,recipient_id:ids.find(id=>id!==user.id),sender_session:args.p_session_id,recipient_session:null,object_id:args.p_kind==='cuddle'?'sofa':null,sender_x:args.p_x,sender_y:args.p_y,recipient_x:null,recipient_y:null,started_at:null,expires_at:new Date(Date.now()+8000).toISOString()};}
+            else if(!social||social.id!==args.p_request_id)result={ok:false,code:'EXPIRED'};
+            else if(args.p_action==='accept'){social={...social,status:'active',recipient_session:args.p_session_id,recipient_x:args.p_x,recipient_y:args.p_y,started_at:new Date().toISOString(),expires_at:new Date(Date.now()+90000).toISOString()};}
+            else if(args.p_action==='renew')social.expires_at=new Date(Date.now()+90000).toISOString();
+            else social=null;
+            await route.fulfill({json:result});return;
+          }
           if(rpc==='house_interact'){
             const key=String(args.p_idempotency_key);let result=actions.get(key);
             if(!result){const object=cottageInteractions.find(o=>o.id===args.p_object_id);result={ok:true,couple_id:couple};
@@ -113,13 +127,34 @@ test('balanced house: desktop/mobile explore, shared slots, furniture actions an
  // A racing loser gets authoritative busy feedback, then retries the free seat.
  await Promise.all([a,b].map(async page=>{await expect.poll(async()=>await page.getByRole('button',{name:'Leave',exact:true}).isVisible()||await page.getByText('That spot is busy. Try the other spot.').isVisible()).toBe(true);if(!await page.getByRole('button',{name:'Leave',exact:true}).isVisible())await page.getByRole('button',{name:'Sit',exact:true}).click();}));
  await expect(a.getByRole('button',{name:'Leave',exact:true})).toBeVisible();await expect(b.getByRole('button',{name:'Leave',exact:true})).toBeVisible();
+ await a.getByRole('button',{name:'Cuddle',exact:true}).click();await b.getByRole('button',{name:'Accept',exact:true}).click();await expect(a.getByTestId('world')).toHaveAttribute('data-social','active');await expect(b.getByTestId('world')).toHaveAttribute('data-social','active');
  await a.getByRole('button',{name:'Settings',exact:true}).click();await a.getByRole('button',{name:'Reconnect',exact:true}).click();await expect(a.getByText('Connected',{exact:true})).toBeVisible();await expect(a.getByRole('button',{name:'Leave',exact:true})).toBeVisible();
+ await expect(a.getByTestId('world')).toHaveAttribute('data-social','active');
  await mkdir('artifacts/phase2',{recursive:true});await a.screenshot({path:'artifacts/phase2/balanced-house-desktop.png'});await b.screenshot({path:'artifacts/phase2/balanced-house-mobile.png'});
  await a.keyboard.press('Escape');await b.getByRole('button',{name:'Leave',exact:true}).click();await expect(a.getByRole('button',{name:'Sit',exact:true})).toBeVisible();
  await walkTo(a,144,256);await expect(a.getByTestId('world')).toHaveAttribute('data-room','kitchen');await a.getByRole('button',{name:'Open',exact:true}).click();
  await walkTo(a,1216,576);await expect(a.getByTestId('world')).toHaveAttribute('data-room','bedroom');await walkTo(a,1248,896);await expect(a.getByTestId('world')).toHaveAttribute('data-room','bathroom');
  const sent=await a.getByTestId('world').getAttribute('data-sent');await a.waitForTimeout(1300);expect(await a.getByTestId('world').getAttribute('data-sent')).toBe(sent);
  await desktop.close();await mobile.close();
+});
+
+test('guided mobile creator saves live appearance, mirror starts Body and wardrobe starts Clothes',async({browser})=>{
+ test.setTimeout(150000);const app=fixture(true);app.paired();app.onboarding();const phone=await browser.newContext({viewport:{width:844,height:390},isMobile:true,hasTouch:true}),desktop=await browser.newContext({viewport:{width:1280,height:800}});await app.install(phone,0);await app.install(desktop,1);const a=await phone.newPage(),b=await desktop.newPage();await login(a,0);await login(b,1);
+ const editor=a.getByRole('dialog',{name:'Character',exact:true});await expect(editor).toBeVisible();await expect(editor.getByText('1 / 4 · Body')).toBeVisible();expect((await editor.boundingBox())!.width).toBe(844);
+ await editor.getByRole('button',{name:'Skin tone 8',exact:true}).click();await editor.getByLabel('Body',{exact:true}).selectOption('2');await editor.getByLabel('Height',{exact:true}).selectOption('2');
+ const position=await coordinate(a);await a.keyboard.down('d');await a.waitForTimeout(300);await a.keyboard.up('d');expect(await coordinate(a)).toBe(position);
+ await editor.getByRole('button',{name:'Next',exact:true}).click();await expect(editor.getByText('2 / 4 · Face/Hair')).toBeVisible();await editor.getByLabel('Hair',{exact:true}).selectOption('7');await editor.getByLabel('Glasses',{exact:true}).selectOption('2');await editor.getByRole('button',{name:'Next',exact:true}).click();await editor.getByRole('button',{name:'Shirt color 3',exact:true}).click();await editor.getByRole('button',{name:'Save outfit',exact:true}).click();await expect(editor.getByRole('button',{name:'Wear',exact:true})).toBeEnabled();await editor.getByRole('button',{name:'Next',exact:true}).click();await expect(editor.getByText('4 / 4 · Review')).toBeVisible();await editor.getByRole('button',{name:'Save',exact:true}).click();await expect(editor).toBeHidden();
+ await expect.poll(async()=>await b.getByTestId('world').getAttribute('data-partner-look')).toBe(await a.getByTestId('world').getAttribute('data-self-look'));
+ await walkTo(a,1744,432);await a.getByRole('button',{name:'Open',exact:true}).click();await expect(editor.getByText('1 / 4 · Body')).toBeVisible();await editor.getByRole('button',{name:'Skin tone 1',exact:true}).click();await editor.getByRole('button',{name:'Cancel',exact:true}).click();expect(JSON.parse((await a.getByTestId('world').getAttribute('data-self-look'))!).skin).toBe(7);
+ await walkTo(a,1712,208);await a.getByRole('button',{name:'Change Clothes',exact:true}).click();await expect(editor.getByText('3 / 4 · Clothes')).toBeVisible();await editor.getByRole('button',{name:'Wear',exact:true}).click();await mkdir('artifacts/phase3',{recursive:true});await a.screenshot({path:'artifacts/phase3/guided-editor-mobile.png'});await editor.getByRole('button',{name:'Cancel',exact:true}).click();await phone.close();await desktop.close();
+});
+
+test('consent expires, accepts on both clients, cancels by movement and reactions expire',async({browser})=>{
+ test.setTimeout(60000);const app=fixture(true);app.paired();const ca=await browser.newContext(),cb=await browser.newContext({viewport:{width:844,height:390},hasTouch:true,isMobile:true});await app.install(ca,0);await app.install(cb,1);const a=await ca.newPage(),b=await cb.newPage();await login(a,0);await login(b,1);await expect(a.getByText('Connected',{exact:true})).toBeVisible();await expect(b.getByText('Connected',{exact:true})).toBeVisible();
+ await a.getByRole('button',{name:'Hug',exact:true}).click();await expect(b.getByRole('button',{name:'Accept',exact:true})).toBeVisible();await expect(b.getByRole('button',{name:'Accept',exact:true})).toBeHidden({timeout:11000});
+ await a.getByRole('button',{name:'Hug',exact:true}).click();await b.getByRole('button',{name:'Ignore',exact:true}).click();await expect(a.getByTestId('world')).toHaveAttribute('data-social','none');
+ await a.getByRole('button',{name:'Hug',exact:true}).click();await b.getByRole('button',{name:'Accept',exact:true}).click();await expect(a.getByTestId('world')).toHaveAttribute('data-social','active');await expect(b.getByTestId('world')).toHaveAttribute('data-social','active');await b.keyboard.down('s');await expect(a.getByTestId('world')).toHaveAttribute('data-social','none');await b.keyboard.up('s');
+ await a.getByRole('button',{name:'Emote',exact:true}).click();await a.getByRole('group',{name:'Emotes'}).getByRole('button',{name:'Love',exact:true}).click();await expect(b.getByTestId('world')).toHaveAttribute('data-reactions','love');await expect(b.getByTestId('world')).toHaveAttribute('data-reactions','',{timeout:5000});await ca.close();await cb.close();
 });
 
 test('phone login in a new session establishes the hall spawn on the partner immediately',async({browser})=>{

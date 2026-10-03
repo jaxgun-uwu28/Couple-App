@@ -1,12 +1,14 @@
 # Phase 3 — Character System
 
-Authorized by user “we can proceed now” on 2026-10-03, after phone smoothness and login-sync rechecks. Phase 2 accepted; Phase 3 implementation waits for the outfit-layering and creator-layout choices below. Read Phase 3, Section 7 and Sections 9.2–9.4. Preserve approved soft chibi proportions, Rose & Sky, playful bounce, landscape controls and independent HUD icons.
+Authorized by user “we can proceed now” on 2026-10-03, after phone smoothness and login-sync rechecks. Phase 2 accepted; user selected hybrid rendering and the guided editor on 2026-10-03. Implementation and verification are in progress. Read Phase 3, Section 7 and Sections 9.2–9.4. Preserve approved soft chibi proportions, Rose & Sky, playful bounce, landscape controls and independent HUD icons.
 
 ## Repository inspection
 
 Keep React/Vite/Phaser/Supabase/Capacitor. Current actors are placeholder Graphics with seat-based colors, four facings and simple walk bob; Sit/Sleep use authoritative furniture anchors. No modular appearance, creator, emote wheel or consent-action tables/contracts exist. Reuse phone static caching, direct joystick transforms, current motion smoothing/budget, new-session reset, snapshot/cache and activity lease framework. Final Phase 2 checks: 47 unit tests, 15 browser tests, 99 pgTAP assertions and real transaction concurrency; user verified smooth Infinix walking (~55–77+ FPS) and login sync resolution. Git clean at inspection. Retain only latest verified local APK on future releases.
 
-## Design gate (pending)
+## Design gate — approved 2026-10-03
+
+User selected **1C**, hybrid cached body/hair/face with separate clothing, and **2C**, guided Body → Face/Hair → Clothes → Review, full-screen on mobile. Mirror reuses the creator starting at Body; Wardrobe jumps to Clothes. Choices recorded in DECISIONS before implementation. Proposal alternatives below remain archived.
 
 ### 1. Outfit layering
 
@@ -26,7 +28,7 @@ All options preserve independent body/skin/hair/face/shirt/pants/shoes/accessory
 | B | Dedicated full-screen creator with large preview and category controls | More editing room, temporarily hides the house |
 | C | Small guided steps: body, face/hair, clothes, review | Less clutter per step; more taps to revise earlier choices |
 
-No implementation or new art direction is approved by this proposal. Do not replace the already approved chibi proportions or HUD.
+The selected options above are approved. Preserve the already approved chibi proportions and HUD.
 
 ## Implementation after choices
 

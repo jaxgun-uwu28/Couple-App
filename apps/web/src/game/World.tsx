@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Capacitor } from '@capacitor/core';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { WORLD, COTTAGE, nearestInteraction, roomAt, roomLabel, cottageRooms, cottageFurniture, cottageInteractions } from '@paw/shared';
+import { WORLD, COTTAGE, nearestInteraction, roomAt, roomLabel, cottageRooms, cottageFurniture, cottageInteractions, defaultAppearance, emotes, emoteIcons } from '@paw/shared';
 import type { HouseSnapshot, Point } from '@paw/shared';
 import { HouseTransport } from '../infra/HouseTransport';
 import type { HouseApi } from '../infra/HouseApi';
@@ -9,6 +9,9 @@ import { defaultSettings, readSettings, saveSettings } from '../infra/storage';
 import type { Settings } from '../infra/storage';
 import { HouseRuntime } from './HouseRuntime';
 import { CottageArt } from './CottageArt';
+import {LayeredCharacter} from './LayeredCharacter';
+import {CharacterEditor} from './CharacterEditor';
+import type {CharacterPose} from './CharacterArt';
 import type { Actor, RuntimeView } from './HouseRuntime';
 
 type Props = { client: SupabaseClient; api: HouseApi; snapshot: HouseSnapshot; onSnapshot: (value: HouseSnapshot | null) => void; onBack: () => void; onLogout: () => Promise<void> };
@@ -22,9 +25,11 @@ export default function World({ client, api, snapshot, onSnapshot, onBack, onLog
   const [settings, setSettings] = useState<Settings>(defaultSettings);
   const settingsRef = useRef(settings); settingsRef.current = settings;
   const [open, setOpen] = useState(false);
+  const [editor,setEditor]=useState<number|null>(null),[wheel,setWheel]=useState(false);
+  const editorRef=useRef(editor);editorRef.current=editor;
   const dialog = useRef<HTMLElement>(null);
   const [rotateAcknowledged, setRotateAcknowledged] = useState(false);
-  const openRef = useRef(open); openRef.current = open;
+  const openRef = useRef(open); openRef.current = open||editor!==null;
   const [hint, setHint] = useState('');
   const [minimap, setMinimap] = useState(false);
   const [roomToast,setRoomToast]=useState('');
@@ -60,7 +65,7 @@ export default function World({ client, api, snapshot, onSnapshot, onBack, onLog
       if (cancelled || !host.current) return;
       class HouseScene extends Phaser.Scene {
         private cottageArt: CottageArt | null = null;
-        private drawings = new Map<string, { body: import('phaser').GameObjects.Container; art: import('phaser').GameObjects.Graphics; label: import('phaser').GameObjects.Text; frame?:string }>();
+        private drawings = new Map<string, LayeredCharacter>();
         private keys!: Record<string, import('phaser').Input.Keyboard.Key>;
         private lastArrow = 0;
         private movingFrames:number[]=[];
@@ -87,39 +92,22 @@ export default function World({ client, api, snapshot, onSnapshot, onBack, onLog
           this.cameras.main.setBounds(0, 0, geometry.width, geometry.height);
           const self=controller.view().actors.find(actor=>actor.local);
           if(self)this.cameras.main.centerOn(self.point.x,self.point.y);
-          if (this.input.keyboard) this.keys = this.input.keyboard.addKeys('W,A,S,D,UP,DOWN,LEFT,RIGHT,E,SPACE,ESC') as typeof this.keys;
+          if (this.input.keyboard) this.keys = this.input.keyboard.addKeys('W,A,S,D,UP,DOWN,LEFT,RIGHT,E,SPACE,ESC,Q') as typeof this.keys;
           this.game.events.on(Phaser.Core.Events.BLUR, this.clearInput, this);
           this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.game.events.off(Phaser.Core.Events.BLUR, this.clearInput, this));
         }
         private clearInput() { input.current = { x: 0, y: 0 }; this.input.keyboard?.resetKeys(); }
         private paint(actor: Actor, time: number, pose?:string, depth?:number) {
-          let drawing = this.drawings.get(actor.id);
-          if (!drawing) {
-            const art = this.add.graphics(); const label = this.add.text(0, -70, actor.name, { fontFamily: 'system-ui', fontSize: '15px', color: '#554451', backgroundColor: '#fff9fa', padding: { x: 8, y: 4 } }).setOrigin(.5);
-            const body = this.add.container(actor.point.x, actor.point.y, [art, label]);
-            drawing = { body, art, label }; this.drawings.set(actor.id, drawing);
-          }
-          const { body, art, label } = drawing;
-          art.setRotation(pose==='Sleep'?-Math.PI/2:0).setScale(pose==='Sit'?.9:1);
-          const bob = actor.animation === 'walk' && !settingsRef.current.reducedMotion ? Math.round(Math.sin(time / 90) * 8)/4 : 0;
-          body.setPosition(actor.point.x, actor.point.y).setDepth(depth??actor.point.y).setAlpha(actor.online ? 1 : .45);
-          const name=actor.name + (actor.away ? ' · Away' : !actor.online ? ' · Offline' : '');
-          if(label.text!==name)label.setText(name);
-          label.setVisible(settingsRef.current.nameTags);
-          const frame=`${actor.seat}:${actor.direction}:${bob}`;
-          if(drawing.frame===frame)return;
-          drawing.frame=frame;
-          art.clear(); art.fillStyle(0x61475c, .14).fillEllipse(0, 0, 34, 13);
-          art.fillStyle(actor.seat === 1 ? 0xdc96ae : 0x9bbbd0).fillRoundedRect(-13, -29 + bob, 26, 29, 10);
-          art.fillStyle(0x66515c).fillRoundedRect(-12, -5 + bob, 10, 9, 4).fillRoundedRect(2, -5 - bob, 10, 9, 4);
-          art.fillStyle(0xf1d2bc).fillCircle(0, -45 + bob, 20);
-          art.fillStyle(actor.seat === 1 ? 0x69515c : 0x85654f).fillRoundedRect(-20, -64 + bob, 40, 17, 10);
-          if (actor.direction !== 'up') {
-            const offset = actor.direction === 'left' ? -5 : actor.direction === 'right' ? 5 : 0;
-            art.fillStyle(0x493d47).fillCircle(-7 + offset, -44 + bob, 2).fillCircle(7 + offset, -44 + bob, 2);
-            art.lineStyle(1.5, 0xb67d7c).lineBetween(-3 + offset, -35 + bob, 3 + offset, -35 + bob);
-          }
+          let drawing=this.drawings.get(actor.id);if(!drawing){drawing=new LayeredCharacter(this);this.drawings.set(actor.id,drawing);}
+          const current=controller.view();drawing.setAppearance(current.characters?.profiles.find(p=>p.user_id===actor.id)?.appearance??defaultAppearance(actor.seat));
+          const social=current.characters?.social, reaction=current.reactions[actor.id];
+          let frame:CharacterPose=pose==='Sleep'?'sleep':pose==='Sit'||actor.afk?'sit':actor.animation==='walk'?'walk'+Math.floor(time/100)%6 as CharacterPose:'idle';
+          if(social?.status==='active')frame=social.kind==='hug'?'hug':social.object_id==='bed'?'sleep':'cuddle';
+          else if(reaction&&(actor.animation!=='walk'||reaction.emote==='dance')){const name=reaction.emote;frame=(['wave','laugh','cry','clap','dance'].includes(name)?name+Math.floor((time-reaction.at)/250)%2:name) as CharacterPose;}
+          if(settingsRef.current.reducedMotion&&frame.startsWith('walk'))frame='walk0';
+          drawing.paint(actor.point,actor.direction,frame,actor.name+(actor.away?' · Away':!actor.online?' · Offline':actor.afk?' · 💤':''),depth??actor.point.y,actor.online?1:.45,settingsRef.current.nameTags,reaction?emoteIcons[reaction.emote]:social?.status==='active'?'💕':'',reaction&&!settingsRef.current.reducedMotion?Math.min(15,(performance.now()-reaction.at)/200):0);
         }
+
         update(time: number) {
           const blocked = openRef.current || /INPUT|TEXTAREA|SELECT/.test(document.activeElement?.tagName ?? '');
           const down = (key: string) => !blocked && this.keys?.[key]?.isDown ? 1 : 0;
@@ -127,8 +115,10 @@ export default function World({ client, api, snapshot, onSnapshot, onBack, onLog
           controller.tick(blocked ? { x: 0, y: 0 } : keyboard.x || keyboard.y ? keyboard : input.current, this.game.loop.rawDelta / 1000, performance.now());
           if (!blocked && ((this.keys?.E && Phaser.Input.Keyboard.JustDown(this.keys.E))||(this.keys?.SPACE&&Phaser.Input.Keyboard.JustDown(this.keys.SPACE))))interactRef.current();
           if(!blocked&&this.keys?.ESC&&Phaser.Input.Keyboard.JustDown(this.keys.ESC))void controller.cancelInteraction().catch(error=>showInteractionHint(error.message));
+          if(!blocked&&this.keys?.Q&&Phaser.Input.Keyboard.JustDown(this.keys.Q))setWheel(true);
+          if(this.keys?.Q&&Phaser.Input.Keyboard.JustUp(this.keys.Q))setWheel(false);
           const current = controller.view(); const ids = new Set(current.actors.map(actor => actor.id));
-          for (const [id, drawing] of this.drawings) if (!ids.has(id)) { drawing.body.destroy(); this.drawings.delete(id); }
+          for (const [id, drawing] of this.drawings) if (!ids.has(id)) { drawing.destroy(); this.drawings.delete(id); }
           const actors=current.actors.map(actor=>{const occupied=current.world?.slots.find(slot=>slot.user_id===actor.id);const anchor=occupied&&cottageInteractions.find(o=>o.id===occupied.object_id)?.slots.find(s=>s.id===occupied.slot_id);return anchor?{...actor,point:{x:anchor.x,y:anchor.y},direction:anchor.facing as Actor['direction'],animation:'idle' as const}:actor;});
           for (const actor of actors){const occupied=current.world?.slots.find(s=>s.user_id===actor.id);const furniture=occupied&&cottageFurniture.find(o=>o.name===occupied.object_id);this.paint(actor,time,occupied?cottageInteractions.find(o=>o.id===occupied.object_id)?.label:undefined,furniture?furniture.y+furniture.height+2:undefined);}
           const occupied=current.world?.slots.some(s=>s.user_id===snapshot.user_id&&s.session_id===current.sessionId);
@@ -139,7 +129,7 @@ export default function World({ client, api, snapshot, onSnapshot, onBack, onLog
             if(this.movingFrames.length>=120){
               const average=this.movingFrames.reduce((sum,value)=>sum+value,0)/this.movingFrames.length;
               const slow=this.movingFrames.filter(value=>value>34).length;
-              performanceReading.current=`0.2.3 · ${this.game.renderer.type===Phaser.WEBGL?'WebGL':'Canvas'} · Walking ${Math.round(1000/average)} FPS · ${slow}/120 frames over 34ms`;
+              performanceReading.current=`0.3.0 · ${this.game.renderer.type===Phaser.WEBGL?'WebGL':'Canvas'} · Walking ${Math.round(1000/average)} FPS · ${slow}/120 frames over 34ms`;
               this.movingFrames=[];
             }
           }
@@ -160,12 +150,17 @@ export default function World({ client, api, snapshot, onSnapshot, onBack, onLog
   const cottage=snapshot.house.map_id==='cottage-v1';
   const target=cottage&&self?nearestInteraction(self.point,targetRef.current):null;
   targetRef.current=target?.id;
+  const profile=view?.characters?.profiles.find(p=>p.user_id===snapshot.user_id);
+  const social=view?.characters?.social;
+  const nearPartner=!!self&&!!partner&&partner.online&&!partner.away&&Math.hypot(self.point.x-partner.point.x,self.point.y-partner.point.y)<=64;
+  useEffect(()=>{if(profile&&!profile.configured&&editorRef.current===null)setEditor(0);},[profile?.configured]);
   const occupied=view?.world?.slots.find(slot=>slot.user_id===snapshot.user_id&&slot.session_id===view.sessionId);
-  interactRef.current=()=>{if(occupied)void runtime.current?.cancelInteraction().catch(error=>showInteractionHint(error.message));else if(target)void runtime.current?.interact(target).catch(error=>showInteractionHint(error.message));else showInteractionHint();};
+  const pairedSeats=occupied&&['sofa','bed'].includes(occupied.object_id)&&view?.world?.slots.some(slot=>slot.user_id===partner?.id&&slot.object_id===occupied.object_id);
+  interactRef.current=()=>{if(occupied||social?.status==='active'||social?.sender_id===snapshot.user_id)void runtime.current?.cancelInteraction().catch(error=>showInteractionHint(error.message));else if(target?.id.includes('mirror')){resetStick();setEditor(0);}else if(target?.id==='wardrobe'){resetStick();setEditor(2);}else if(target)void runtime.current?.interact(target).catch(error=>showInteractionHint(error.message));else showInteractionHint();};
   const room=cottage&&self?roomAt(self.point):'';
   useEffect(()=>{if(!room)return;setRoomToast(roomLabel(room));if(roomTimer.current!==null)clearTimeout(roomTimer.current);roomTimer.current=setTimeout(()=>setRoomToast(''),2200);},[room]);
   const resetStick = () => { input.current = { x: 0, y: 0 }; updateKnob({ x: 0, y: 0 }); };
-  return <main className={`world ${cottage?'cottage-world':''}`} data-testid="world" data-room={room} data-self-x={self?.point.x.toFixed(1)} data-self-y={self?.point.y.toFixed(1)} data-partner-x={partner?.point.x.toFixed(1)} data-partner-y={partner?.point.y.toFixed(1)} data-sent={view?.sent} data-received={view?.received} data-taken-over={view?.takenOver}>
+  return <main onPointerDownCapture={()=>runtime.current?.touchInput()} onKeyDownCapture={()=>runtime.current?.touchInput()} className={`world ${cottage?'cottage-world':''}`} data-testid="world" data-room={room} data-self-x={self?.point.x.toFixed(1)} data-self-y={self?.point.y.toFixed(1)} data-partner-x={partner?.point.x.toFixed(1)} data-partner-y={partner?.point.y.toFixed(1)} data-sent={view?.sent} data-received={view?.received} data-taken-over={view?.takenOver} data-social={social?.status??'none'} data-self-look={profile?JSON.stringify(profile.appearance):''} data-partner-look={JSON.stringify(view?.characters?.profiles.find(p=>p.user_id===partner?.id)?.appearance??null)} data-reactions={Object.values(view?.reactions??{}).map(r=>r.emote).join(',')}>
     <div className="world-canvas" ref={host} aria-label={cottage?'Shared five-room home':'Shared home movement room'} role="img" />
     <button className="settings-icon" aria-label="Settings" onClick={() => { resetStick();setPerformanceText(performanceReading.current); setOpen(true); }}>⚙</button>
     {cottage&&<button className="minimap-icon" aria-label="Map" aria-expanded={minimap} onClick={()=>setMinimap(!minimap)}>⌑</button>}
@@ -182,7 +177,12 @@ export default function World({ client, api, snapshot, onSnapshot, onBack, onLog
       let x = (event.clientX - box.left - box.width / 2) / radius; let y = (event.clientY - box.top - box.height / 2) / radius; const length = Math.hypot(x, y); if (length > 1) { x /= length; y /= length; }
       input.current = length < .15 ? { x: 0, y: 0 } : { x, y }; updateKnob({ x: x * radius, y: y * radius });
     }} onPointerUp={resetStick} onPointerCancel={resetStick} onLostPointerCapture={resetStick} onBlur={resetStick}><span ref={knobElement} style={{ transform: `translate(${knob.x}px, ${knob.y}px)` }} /></div>
-    <button className="interact" disabled={view?.interacting||(cottage&&!view?.ready)} onClick={()=>interactRef.current()}>{occupied?'Leave':target?.label??'Interact'}</button>
+    <button className="interact" disabled={view?.interacting||(cottage&&!view?.ready)} onClick={()=>interactRef.current()}>{occupied||social?.status==='active'||social?.sender_id===snapshot.user_id?'Leave':target?.label??'Interact'}</button>
+    {cottage&&<button className="emote-icon" aria-label="Emote" aria-expanded={wheel} disabled={!view?.ready} onClick={()=>setWheel(!wheel)}>😊</button>}
+    {wheel&&<div className="emote-wheel" role="group" aria-label="Emotes">{emotes.map(emote=><button key={emote} aria-label={emote.charAt(0).toUpperCase()+emote.slice(1)} onClick={()=>{setWheel(false);void runtime.current?.emote(emote).catch(error=>showInteractionHint(error.message));}}>{emoteIcons[emote]}</button>)}</div>}
+    {(nearPartner||pairedSeats)&&!social&&<div className="partner-actions"><button disabled={view?.interacting||!!occupied&&!pairedSeats} onClick={()=>void runtime.current?.social('request',pairedSeats?'cuddle':'hug').catch(error=>showInteractionHint(error.message))}>{pairedSeats?'Cuddle':'Hug'}</button><button onClick={()=>void runtime.current?.emote('wave')}>Wave</button><button onClick={()=>showInteractionHint('Chat is coming in Phase 4.')}>Talk</button></div>}
+    {social?.status==='pending'&&<div className="consent-prompt" role="status">{social.recipient_id===snapshot.user_id?<><p>{partner?.name??'Your partner'} wants to {social.kind}.</p><button disabled={view?.interacting} onClick={()=>void runtime.current?.social('accept').catch(error=>showInteractionHint(error.message))}>Accept</button><button disabled={view?.interacting} onClick={()=>void runtime.current?.social('ignore').catch(error=>showInteractionHint(error.message))}>Ignore</button></>:<><p>Waiting for your partner…</p><button onClick={()=>void runtime.current?.social('cancel')}>Cancel</button></>}</div>}
+    {editor!==null&&profile&&<CharacterEditor initial={profile.appearance} step={editor} presets={view?.characters?.presets??[]} onClose={()=>setEditor(null)} onSave={async appearance=>{await runtime.current!.saveAppearance(appearance);setEditor(null);}} onPreset={async(slot,appearance)=>{await runtime.current!.saveAppearance(appearance,slot);}}/>}
     <div className="world-message" role="status">{view?.takenOver ? <>Playing on another device. <button onClick={() => void runtime.current?.takeControl().catch(error => setHint(error.message))}>Play here</button></> : view?.message || hint}</div>
     {view?.connection === 'error' && <button className="reconnect" onClick={() => void runtime.current?.reconnect()}>Reconnect</button>}
     {!rotateAcknowledged && <div className="rotate-hint">Turn your phone sideways for more room.<button onClick={() => setRotateAcknowledged(true)}>Ready</button></div>}

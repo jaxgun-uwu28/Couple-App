@@ -1,5 +1,13 @@
 # DECISIONS
 
+## 2026-10-03 — Phase 3 selected rendering and editor (before implementation)
+
+User explicitly chose **1C: cache body/hair/face; keep clothing separate**. Use a bounded per-character base atlas for body/skin/hair/face, with aligned independent shirt/pants/shoes/accessory sprite layers sharing four-direction animation frames. Preserve approved soft-chibi proportions and Rose & Sky, phone renderer caching and movement/network performance. Do not replace this with a fully flattened outfit atlas.
+
+User chose **guided Body → Face/Hair → Clothes → Review**, reused as a **full-screen editor on mobile**. Onboarding and Mirror open the same editor from Body; Wardrobe opens that editor directly at Clothes. Preview and selection state persist while navigating steps; save is explicit, cancel discards draft. Reuse the screens rather than building separate mirror/wardrobe flows. Five own-character outfit presets belong to Clothes.
+
+Appearance/presets are RPC-owned and caller scoped, with couple-scoped read visibility, validated catalog bounds and idempotency. Add an authoritative character/social read RPC instead of changing old strict world/motion payloads; use UUID-only invalidation and a separate validated ephemeral emote event. Hug/Cuddle consent uses one couple-scoped server state machine, eight-second requests, atomic accept/cancel, session binding and bounded active leases. Server checks participant-reported valid map positions on request/accept against a 64px proximity bound; movement remains peer-trusted (no server movement loop or economy authority). Furniture Cuddle additionally validates both occupied anchors on the same sofa/bed. No arbitrary teleport, direct table writes, new chat subsystem or extra standing-idle polling. Add protocol contracts with implementation and test other-couple/own-only access, duplicate/simultaneous requests and recovery before hosted rollout.
+
 ## 2026-10-03 — New login session position correction
 
 User verified smooth phone movement at roughly 55–77+ FPS on 0.2.2. Preserve that rendering profile. A new login deliberately spawns in the hall, but RemoteMotion retained the previous session's rendered position and eased toward the new spawn, producing a false walk through the house. Reset rendered position, display frame and playback timeline on a validated new session's first packet; publish its received point immediately. Continue smoothing ordinary same-session corrections/reconnects. Existing membership/Presence session filtering rejects superseded packets; no persistent position feature, new event, RPC or database change.
@@ -130,3 +138,6 @@ User authorized continuation. Create character/pet/sample-room/HUD reference fir
 - Backend gate: official Vercel docs now describe Hobby WebSockets beta, but the complete no-card usage/recovery/add-on gate is unproven. Retain default Supabase; see FREE_TIER_NOTES.md. No Redis or transport switch.
 - Scope: user requested inspection, quota research and proposals, then a stop. Defer infrastructure spike and gameplay. Phase 0 remains incomplete; no done tag.
 - Art: choices were pending when proposals were presented; they are now recorded in the approval entry above. Detailed mockups remain pending.
+## Phase 3 presence compatibility detail — 2026-10-03
+
+AFK uses an optional boolean `afk` in Presence. Older clients strip unknown Presence fields, so phase/map and motion payloads retain their existing values. Track only on the two-minute idle transition and first subsequent input, with a three-second yawn followed by a sitting idle pose. This adds no periodic idle traffic.
