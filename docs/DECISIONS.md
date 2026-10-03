@@ -1,5 +1,9 @@
 # DECISIONS
 
+## 2026-10-03 — Phase 3 publication approved
+
+After exact application-commit CI passed, user explicitly authorized publishing Phase 3 to main and the existing Vercel site. Fast-forwarded main to f3b29a1 (application b9f1541 plus report only); verified Vercel success and the live Connected creator. Hosted catalog and 67 rollback-only security checks passed. APK 0.3.1 verified; deleted obsolete local APK copies/archives while preserving the new deliverable. Physical Android performance and two-device checks remain pending; no Phase 3 completion tag and no Phase 4 work.
+
 ## 2026-10-03 — Approved asset plan and manifest authority
 
 Manual phone diagnostics selected by user. Add a tiny optional local Capacitor Android plugin, sampled only when opening Settings, using Android Debug.getMemoryInfo. Report app-process PSS in MiB; explicitly exclude isolated WebView renderer processes, and do not call it whole-app memory. Web reports JS heap when supported. No permissions, external telemetry, paid dependency or gameplay reliance. APIs checked against Capacitor custom-code documentation and Android Debug API reference.

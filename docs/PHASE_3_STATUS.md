@@ -30,7 +30,9 @@ Provisional front-only artwork: no male parts, back/side views, pose grids, body
 
 ## Next Phase
 
-Phase 4 remains unstarted. Publication and real web/phone checks are pending; finish those and the physical Android performance measurement before marking Phase 3 complete. Report then wait for approval.
+User explicitly approved Phase 3 publication after automatic review required it. Main was fast-forwarded to `f3b29a1`; Vercel reported success and the existing live web session showed Connected plus the new Body-step editor. This commit differs from verified application commit `b9f1541` only in this report. The matching verified APK is `artifacts/phase3/Paw-and-Us-0.3.1-b9f1541.apk`. Obsolete local APKs/extracted copies and APK archives were deleted after signature/package/digest verification; exactly one deliverable APK remains.
+
+Phase 4 remains unstarted. Real web/phone Hug/Cuddle/appearance/reconnect checks and physical Android performance are pending user results; finish these before marking Phase 3 complete. The manual test request is open. Final phase approval remains pending.
 
 ## Performance evidence
 
