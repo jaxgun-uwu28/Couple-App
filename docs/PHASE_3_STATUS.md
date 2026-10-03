@@ -22,19 +22,19 @@ UUID invalidation for authoritative character reads and session-bound ephemeral 
 
 ## Tests
 
-Local typecheck/build and 53 unit tests passed. Browser checks completed for composition/cache cleanup, guided mobile creator/live appearance/cancel and Mirror/Wardrobe entry, consent expiry/accept/cancel/reaction expiry. Full exact-commit CI/database/concurrency verification remains pending. Two-character production web benchmark and Android diagnostics are below; real Android sync/performance remains pending.
+Implementation commit `b9f1541` passed CI run `37100633508`: typecheck/build, manifest/map validation, 53 unit tests, 19 browser tests, 166 database assertions and actual pairing/slot/character races. Hosted rollback-only verification passed 19 manifest checks plus 48 character/consent/authorization checks; catalog has 70 options, a valid default and RLS enabled. APK run `37100635235` succeeded; downloaded archive digest and APK signature/package verified: 0.3.1, version code 8. All 65 externally bundled PNG files are 200x300; five small layers are inlined by Vite. Actual Android sync/performance remains pending.
 
 ## Known Issues
 
-Provisional front-only artwork: no male parts, back/side views, pose grids, body/height variants, independent eyes/mouth/shoes/clothing colors or full specification option counts. Temporary transforms/effects do not constitute final pose art. Android process PSS excludes isolated WebView renderer memory; JS heap and decoded character pixels are distinct metrics, not total app/GPU memory. Device measurements must not be inferred from emulated touch or headless results.
+Provisional front-only artwork: no male parts, back/side views, pose grids, body/height variants, independent eyes/mouth/shoes/clothing colors or full specification option counts. Temporary transforms/effects do not constitute final pose art. Android process PSS excludes isolated WebView renderer memory; JS heap and decoded character pixels are distinct metrics, not total app/GPU memory. Device measurements must not be inferred from emulated touch or headless results. The CI-generated debug signing certificate differs from the previous 0.2.3 APK, so Android may require uninstall/reinstall; backend data is preserved, but sign-in must be repeated. No signing credentials were modified. Stable release signing remains deferred.
 
 ## Next Phase
 
-Phase 4 remains unstarted. Finish Phase 3 CI, hosted verification, matching APK and real web/phone checks, then present the final report and wait for approval.
+Phase 4 remains unstarted. Publication and real web/phone checks are pending; finish those and the physical Android performance measurement before marking Phase 3 complete. Report then wait for approval.
 
 ## Performance evidence
 
-Two characters in view, 1280x800, 30 seconds alternating movement, production build with fixture authentication. Headless Chromium measured about 7 FPS; it is not representative hardware evidence. Visible Edge used AMD Radeon 660M / ANGLE Direct3D11. Exact FPS, heap samples and screenshot live under `artifacts/phase3/web-performance.json` and `two-character-performance.png`; final measured range will be recorded after verification. Decoded source/cached character pixels are bounded at approximately 17.9 MiB (70 source layers + eight actor textures), excluding GPU copies and whole-app memory.
+Two characters in view, 1280x800, 30 seconds alternating movement, production build with fixture authentication and two browser contexts. Headless Chromium measured about 7 FPS; it is not representative hardware evidence. Visible Edge 154 used AMD Radeon 660M / ANGLE Direct3D11: **32–35 FPS**, 27 recorded rolling-window samples, **35.2–44.9 MiB JS heap**, and **17.9 MiB estimated decoded character pixels/caches**. CDP heap was 9.5 MiB before warmup and 31.6 MiB afterward; that cold-start increase is not proof of a leak. Exact samples/screenshot are under `artifacts/phase3/web-performance.json` and `two-character-performance.png`. Pixel/cache estimates exclude GPU copies and whole-app memory. No 60-FPS or long-term-memory-stability claim.
 
 Phone: user selected manual APK diagnostics; measurement is pending. Open the new APK on the phone and matching web build with both characters visible, move for one minute, then open Settings. Record FPS, slow frames, JS heap if supported, character pixels and app-process PSS. The current Infinix Note 30/Helio G99 device is the available phone, not an independently tested low-end model.
 
