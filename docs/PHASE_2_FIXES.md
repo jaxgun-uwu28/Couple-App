@@ -1,5 +1,7 @@
 # Phase 2 device corrections — 2026-10-03
 
+Subsequent user testing reported phone smoothness still poor on APK 0.2.1 and Chrome. Additional phone-specific rendering changes, FPS diagnostics and APK 0.2.2 are recorded in `PHASE_2_PHONE_PERFORMANCE.md`; physical frame-rate recheck remains pending.
+
 Published to main/Vercel from app source `32d5a48`. Existing authenticated browser connected successfully to the updated client (`index-DeiMUr_D.js`), with no warning/error logs. Live evidence: `artifacts/phase2/fixes-live-connected.png`. Matching Android 0.2.1/code 4 is ready; physical phone recheck remains pending.
 
 ## Implemented
