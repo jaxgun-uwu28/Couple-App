@@ -1,5 +1,27 @@
 # Phase 3 — Character System
 
+## Current asset plan — approved, implementation in progress (2026-10-03)
+
+This supersedes the earlier procedural-art plan below. Read AGENTS.md, MASTER_SPEC Section 7, Sections 9.2–9.4 and Phase 3 in Section 24, plus the asset manifest/README and preview images. All 70 listed half PNGs exist and have 200x300 RGBA headers. User approved implementation and temporary pose transforms. Keep the existing stack; Phase 3 only.
+
+1. Use unchanged half PNGs and manifest identifiers. Cache lower body/back-hair/blush and upper front-hair/face separately, with outfit between and accessories above; preserve full-canvas alignment, complementary bob/twintails pairing and bounded phone caches.
+2. Adapt the shared guided Body → Face/Hair → Clothes → Review editor to the supplied catalog. Keep full-screen mobile, onboarding/Mirror at Body, Wardrobe at Clothes and five presets. Update caller-owned appearance validation/compatibility and protocol together.
+3. Use supplied faces for emotes and shared portrait composition; finish Phase 3 sync, reactions, consent-based Hug/contextual Cuddle, name tags and AFK. Mark absent views/poses as placeholders using unchanged front art and activity indicators. Do not implement Phase 4 chat or claim completed final animation art.
+4. Verify alignment/cache reuse, editor/presets, authorization, invalid/duplicate/simultaneous actions, consent expiry/cancel, reconnect/disconnect, two-player sync and desktop/mobile performance. After approved implementation/checks, verify matching web/APK; remove obsolete APKs only after the new deliverable is verified. Report limitations and wait for phase approval.
+
+### Gaps
+
+- Male body/hair/outfits are missing.
+- Back/side views and animation grids are missing: walk/run, sit/sleep, hug/cuddle, wave/clap/dance and other activity poses need clearly marked placeholders.
+- Three skins are supplied versus ≥8 required; no three-body-type or three-height artwork.
+- Five distinct hair styles and five colors versus ≥8/≥12 required. Bob lacks matching back; twintails lacks matching front.
+- Eleven combined faces; no independent eye/mouth selection, eye colors or exact artwork for every emote.
+- Nine complete outfits; no independent shirt/pants/shoes or clothing color options. Footwear included in some outfits cannot be independently selected. Accessories: three glasses, flower and choker.
+
+User confirms free-image licensing despite stale source notices. Assets are not final; do not fill gaps by editing/redrawing/recoloring. The earlier prototype/schema does not complete these art requirements.
+
+## Earlier inspection and prototype plan (historical)
+
 Authorized by user “we can proceed now” on 2026-10-03, after phone smoothness and login-sync rechecks. Phase 2 accepted; user selected hybrid rendering and the guided editor on 2026-10-03. Implementation and verification are in progress. Read Phase 3, Section 7 and Sections 9.2–9.4. Preserve approved soft chibi proportions, Rose & Sky, playful bounce, landscape controls and independent HUD icons.
 
 ## Repository inspection

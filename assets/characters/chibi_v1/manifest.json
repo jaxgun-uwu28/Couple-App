@@ -1,0 +1,1223 @@
+{
+  "source": "chibis_600x400.psd",
+  "license": "CONFIRMED by asset provider/user: free images; provisional art",
+  "canvas": {
+    "full": [
+      400,
+      600
+    ],
+    "half": [
+      200,
+      300
+    ]
+  },
+  "note": "Every PNG is a full-canvas, transparent layer: draw all selected layers at (0,0) with the same size and they line up. Do not trim without using bbox.",
+  "z_order_bottom_to_top": [
+    "hair_back",
+    "body",
+    "outfit",
+    "hair_front",
+    "face",
+    "accessories"
+  ],
+  "catalog": {
+    "hair_styles_back": [
+      "hime",
+      "long",
+      "short",
+      "twintails"
+    ],
+    "hair_styles_front": [
+      "bob",
+      "hime",
+      "long",
+      "short"
+    ],
+    "hair_colors": [
+      "black",
+      "blonde",
+      "brown",
+      "pink",
+      "silver"
+    ],
+    "skins": [
+      "skin3",
+      "skin2",
+      "skin1"
+    ],
+    "blush": [
+      "blush2",
+      "blush1"
+    ],
+    "outfits": [
+      "seifuku",
+      "seifuku2",
+      "sundress",
+      "towel",
+      "swimsuit",
+      "hoodie",
+      "pe uniform",
+      "coat",
+      "pjs"
+    ],
+    "faces": [
+      "smile",
+      "shocked",
+      "normal",
+      "delighted",
+      "sad",
+      "angry",
+      "smug",
+      "annoyed",
+      "sleepy",
+      "smile2",
+      "laugh"
+    ],
+    "accessories": [
+      "red glasses",
+      "black glasses",
+      "circle glasses",
+      "flower",
+      "choker"
+    ]
+  },
+  "default_look": {
+    "hair_style": "long",
+    "hair_color": "brown",
+    "skin": "skin2",
+    "blush": "blush1",
+    "outfit": "seifuku2",
+    "face": "smile",
+    "accessories": [
+      "red glasses"
+    ]
+  },
+  "missing": [
+    "male body/hair/outfits",
+    "back and side views",
+    "sit/sleep/hug/walk poses",
+    "eye color options",
+    "separate shoes"
+  ],
+  "layers": [
+    {
+      "id": "hair_back.hime.blonde",
+      "group": "hair_back",
+      "sub": [
+        "hime"
+      ],
+      "name": "blonde",
+      "file": "hair_back/hime/blonde.png",
+      "bbox": [
+        32,
+        128,
+        373,
+        396
+      ],
+      "z_group": 0
+    },
+    {
+      "id": "hair_back.hime.silver",
+      "group": "hair_back",
+      "sub": [
+        "hime"
+      ],
+      "name": "silver",
+      "file": "hair_back/hime/silver.png",
+      "bbox": [
+        32,
+        128,
+        373,
+        396
+      ],
+      "z_group": 0
+    },
+    {
+      "id": "hair_back.hime.pink",
+      "group": "hair_back",
+      "sub": [
+        "hime"
+      ],
+      "name": "pink",
+      "file": "hair_back/hime/pink.png",
+      "bbox": [
+        32,
+        128,
+        373,
+        396
+      ],
+      "z_group": 0
+    },
+    {
+      "id": "hair_back.hime.brown",
+      "group": "hair_back",
+      "sub": [
+        "hime"
+      ],
+      "name": "brown",
+      "file": "hair_back/hime/brown.png",
+      "bbox": [
+        32,
+        128,
+        373,
+        396
+      ],
+      "z_group": 0
+    },
+    {
+      "id": "hair_back.hime.black",
+      "group": "hair_back",
+      "sub": [
+        "hime"
+      ],
+      "name": "black",
+      "file": "hair_back/hime/black.png",
+      "bbox": [
+        32,
+        128,
+        373,
+        396
+      ],
+      "z_group": 0
+    },
+    {
+      "id": "hair_back.long.blonde",
+      "group": "hair_back",
+      "sub": [
+        "long"
+      ],
+      "name": "blonde",
+      "file": "hair_back/long/blonde.png",
+      "bbox": [
+        25,
+        169,
+        376,
+        463
+      ],
+      "z_group": 0
+    },
+    {
+      "id": "hair_back.long.silver",
+      "group": "hair_back",
+      "sub": [
+        "long"
+      ],
+      "name": "silver",
+      "file": "hair_back/long/silver.png",
+      "bbox": [
+        25,
+        169,
+        376,
+        463
+      ],
+      "z_group": 0
+    },
+    {
+      "id": "hair_back.long.pink",
+      "group": "hair_back",
+      "sub": [
+        "long"
+      ],
+      "name": "pink",
+      "file": "hair_back/long/pink.png",
+      "bbox": [
+        25,
+        169,
+        376,
+        463
+      ],
+      "z_group": 0
+    },
+    {
+      "id": "hair_back.long.brown",
+      "group": "hair_back",
+      "sub": [
+        "long"
+      ],
+      "name": "brown",
+      "file": "hair_back/long/brown.png",
+      "bbox": [
+        25,
+        169,
+        376,
+        463
+      ],
+      "z_group": 0
+    },
+    {
+      "id": "hair_back.long.black",
+      "group": "hair_back",
+      "sub": [
+        "long"
+      ],
+      "name": "black",
+      "file": "hair_back/long/black.png",
+      "bbox": [
+        25,
+        169,
+        376,
+        463
+      ],
+      "z_group": 0
+    },
+    {
+      "id": "hair_back.twintails.blonde",
+      "group": "hair_back",
+      "sub": [
+        "twintails"
+      ],
+      "name": "blonde",
+      "file": "hair_back/twintails/blonde.png",
+      "bbox": [
+        5,
+        185,
+        399,
+        316
+      ],
+      "z_group": 0
+    },
+    {
+      "id": "hair_back.twintails.silver",
+      "group": "hair_back",
+      "sub": [
+        "twintails"
+      ],
+      "name": "silver",
+      "file": "hair_back/twintails/silver.png",
+      "bbox": [
+        5,
+        185,
+        399,
+        316
+      ],
+      "z_group": 0
+    },
+    {
+      "id": "hair_back.twintails.pink",
+      "group": "hair_back",
+      "sub": [
+        "twintails"
+      ],
+      "name": "pink",
+      "file": "hair_back/twintails/pink.png",
+      "bbox": [
+        5,
+        185,
+        399,
+        316
+      ],
+      "z_group": 0
+    },
+    {
+      "id": "hair_back.twintails.brown",
+      "group": "hair_back",
+      "sub": [
+        "twintails"
+      ],
+      "name": "brown",
+      "file": "hair_back/twintails/brown.png",
+      "bbox": [
+        5,
+        185,
+        399,
+        316
+      ],
+      "z_group": 0
+    },
+    {
+      "id": "hair_back.twintails.black",
+      "group": "hair_back",
+      "sub": [
+        "twintails"
+      ],
+      "name": "black",
+      "file": "hair_back/twintails/black.png",
+      "bbox": [
+        5,
+        185,
+        399,
+        316
+      ],
+      "z_group": 0
+    },
+    {
+      "id": "hair_back.short.blonde",
+      "group": "hair_back",
+      "sub": [
+        "short"
+      ],
+      "name": "blonde",
+      "file": "hair_back/short/blonde.png",
+      "bbox": [
+        76,
+        135,
+        334,
+        339
+      ],
+      "z_group": 0
+    },
+    {
+      "id": "hair_back.short.silver",
+      "group": "hair_back",
+      "sub": [
+        "short"
+      ],
+      "name": "silver",
+      "file": "hair_back/short/silver.png",
+      "bbox": [
+        76,
+        135,
+        334,
+        339
+      ],
+      "z_group": 0
+    },
+    {
+      "id": "hair_back.short.pink",
+      "group": "hair_back",
+      "sub": [
+        "short"
+      ],
+      "name": "pink",
+      "file": "hair_back/short/pink.png",
+      "bbox": [
+        76,
+        135,
+        334,
+        339
+      ],
+      "z_group": 0
+    },
+    {
+      "id": "hair_back.short.brown",
+      "group": "hair_back",
+      "sub": [
+        "short"
+      ],
+      "name": "brown",
+      "file": "hair_back/short/brown.png",
+      "bbox": [
+        76,
+        135,
+        334,
+        339
+      ],
+      "z_group": 0
+    },
+    {
+      "id": "hair_back.short.black",
+      "group": "hair_back",
+      "sub": [
+        "short"
+      ],
+      "name": "black",
+      "file": "hair_back/short/black.png",
+      "bbox": [
+        76,
+        135,
+        334,
+        339
+      ],
+      "z_group": 0
+    },
+    {
+      "id": "body.skin3",
+      "group": "body",
+      "sub": [],
+      "name": "skin3",
+      "file": "body/skin3.png",
+      "bbox": [
+        77,
+        58,
+        333,
+        564
+      ],
+      "z_group": 1
+    },
+    {
+      "id": "body.skin2",
+      "group": "body",
+      "sub": [],
+      "name": "skin2",
+      "file": "body/skin2.png",
+      "bbox": [
+        77,
+        58,
+        333,
+        564
+      ],
+      "z_group": 1
+    },
+    {
+      "id": "body.skin1",
+      "group": "body",
+      "sub": [],
+      "name": "skin1",
+      "file": "body/skin1.png",
+      "bbox": [
+        77,
+        58,
+        333,
+        564
+      ],
+      "z_group": 1
+    },
+    {
+      "id": "body.blush.blush2",
+      "group": "body",
+      "sub": [
+        "blush"
+      ],
+      "name": "blush2",
+      "file": "body/blush/blush2.png",
+      "bbox": [
+        108,
+        215,
+        306,
+        299
+      ],
+      "z_group": 1
+    },
+    {
+      "id": "body.blush.blush1",
+      "group": "body",
+      "sub": [
+        "blush"
+      ],
+      "name": "blush1",
+      "file": "body/blush/blush1.png",
+      "bbox": [
+        114,
+        216,
+        300,
+        292
+      ],
+      "z_group": 1
+    },
+    {
+      "id": "outfit.seifuku",
+      "group": "outfit",
+      "sub": [],
+      "name": "seifuku",
+      "file": "outfit/seifuku.png",
+      "bbox": [
+        131,
+        310,
+        282,
+        565
+      ],
+      "z_group": 2
+    },
+    {
+      "id": "outfit.seifuku2",
+      "group": "outfit",
+      "sub": [],
+      "name": "seifuku2",
+      "file": "outfit/seifuku2.png",
+      "bbox": [
+        131,
+        310,
+        282,
+        565
+      ],
+      "z_group": 2
+    },
+    {
+      "id": "outfit.sundress",
+      "group": "outfit",
+      "sub": [],
+      "name": "sundress",
+      "file": "outfit/sundress.png",
+      "bbox": [
+        110,
+        313,
+        299,
+        566
+      ],
+      "z_group": 2
+    },
+    {
+      "id": "outfit.towel",
+      "group": "outfit",
+      "sub": [],
+      "name": "towel",
+      "file": "outfit/towel.png",
+      "bbox": [
+        140,
+        346,
+        274,
+        478
+      ],
+      "z_group": 2
+    },
+    {
+      "id": "outfit.swimsuit",
+      "group": "outfit",
+      "sub": [],
+      "name": "swimsuit",
+      "file": "outfit/swimsuit.png",
+      "bbox": [
+        151,
+        312,
+        265,
+        449
+      ],
+      "z_group": 2
+    },
+    {
+      "id": "outfit.hoodie",
+      "group": "outfit",
+      "sub": [],
+      "name": "hoodie",
+      "file": "outfit/hoodie.png",
+      "bbox": [
+        93,
+        304,
+        317,
+        568
+      ],
+      "z_group": 2
+    },
+    {
+      "id": "outfit.pe_uniform",
+      "group": "outfit",
+      "sub": [],
+      "name": "pe uniform",
+      "file": "outfit/pe_uniform.png",
+      "bbox": [
+        98,
+        304,
+        310,
+        566
+      ],
+      "z_group": 2
+    },
+    {
+      "id": "outfit.coat",
+      "group": "outfit",
+      "sub": [],
+      "name": "coat",
+      "file": "outfit/coat.png",
+      "bbox": [
+        94,
+        307,
+        313,
+        568
+      ],
+      "z_group": 2
+    },
+    {
+      "id": "outfit.pjs",
+      "group": "outfit",
+      "sub": [],
+      "name": "pjs",
+      "file": "outfit/pjs.png",
+      "bbox": [
+        89,
+        302,
+        312,
+        552
+      ],
+      "z_group": 2
+    },
+    {
+      "id": "hair_front.bob.blonde",
+      "group": "hair_front",
+      "sub": [
+        "bob"
+      ],
+      "name": "blonde",
+      "file": "hair_front/bob/blonde.png",
+      "bbox": [
+        58,
+        57,
+        353,
+        353
+      ],
+      "z_group": 3
+    },
+    {
+      "id": "hair_front.bob.silver",
+      "group": "hair_front",
+      "sub": [
+        "bob"
+      ],
+      "name": "silver",
+      "file": "hair_front/bob/silver.png",
+      "bbox": [
+        58,
+        57,
+        353,
+        353
+      ],
+      "z_group": 3
+    },
+    {
+      "id": "hair_front.bob.pink",
+      "group": "hair_front",
+      "sub": [
+        "bob"
+      ],
+      "name": "pink",
+      "file": "hair_front/bob/pink.png",
+      "bbox": [
+        58,
+        57,
+        353,
+        353
+      ],
+      "z_group": 3
+    },
+    {
+      "id": "hair_front.bob.brown",
+      "group": "hair_front",
+      "sub": [
+        "bob"
+      ],
+      "name": "brown",
+      "file": "hair_front/bob/brown.png",
+      "bbox": [
+        58,
+        57,
+        353,
+        353
+      ],
+      "z_group": 3
+    },
+    {
+      "id": "hair_front.bob.black",
+      "group": "hair_front",
+      "sub": [
+        "bob"
+      ],
+      "name": "black",
+      "file": "hair_front/bob/black.png",
+      "bbox": [
+        58,
+        57,
+        353,
+        353
+      ],
+      "z_group": 3
+    },
+    {
+      "id": "hair_front.hime.blonde",
+      "group": "hair_front",
+      "sub": [
+        "hime"
+      ],
+      "name": "blonde",
+      "file": "hair_front/hime/blonde.png",
+      "bbox": [
+        75,
+        57,
+        336,
+        410
+      ],
+      "z_group": 3
+    },
+    {
+      "id": "hair_front.hime.silver",
+      "group": "hair_front",
+      "sub": [
+        "hime"
+      ],
+      "name": "silver",
+      "file": "hair_front/hime/silver.png",
+      "bbox": [
+        75,
+        57,
+        336,
+        410
+      ],
+      "z_group": 3
+    },
+    {
+      "id": "hair_front.hime.pink",
+      "group": "hair_front",
+      "sub": [
+        "hime"
+      ],
+      "name": "pink",
+      "file": "hair_front/hime/pink.png",
+      "bbox": [
+        75,
+        57,
+        336,
+        410
+      ],
+      "z_group": 3
+    },
+    {
+      "id": "hair_front.hime.brown",
+      "group": "hair_front",
+      "sub": [
+        "hime"
+      ],
+      "name": "brown",
+      "file": "hair_front/hime/brown.png",
+      "bbox": [
+        75,
+        57,
+        336,
+        410
+      ],
+      "z_group": 3
+    },
+    {
+      "id": "hair_front.hime.black",
+      "group": "hair_front",
+      "sub": [
+        "hime"
+      ],
+      "name": "black",
+      "file": "hair_front/hime/black.png",
+      "bbox": [
+        75,
+        57,
+        336,
+        410
+      ],
+      "z_group": 3
+    },
+    {
+      "id": "hair_front.long.blonde",
+      "group": "hair_front",
+      "sub": [
+        "long"
+      ],
+      "name": "blonde",
+      "file": "hair_front/long/blonde.png",
+      "bbox": [
+        75,
+        57,
+        336,
+        367
+      ],
+      "z_group": 3
+    },
+    {
+      "id": "hair_front.long.silver",
+      "group": "hair_front",
+      "sub": [
+        "long"
+      ],
+      "name": "silver",
+      "file": "hair_front/long/silver.png",
+      "bbox": [
+        75,
+        57,
+        336,
+        367
+      ],
+      "z_group": 3
+    },
+    {
+      "id": "hair_front.long.pink",
+      "group": "hair_front",
+      "sub": [
+        "long"
+      ],
+      "name": "pink",
+      "file": "hair_front/long/pink.png",
+      "bbox": [
+        75,
+        57,
+        336,
+        367
+      ],
+      "z_group": 3
+    },
+    {
+      "id": "hair_front.long.brown",
+      "group": "hair_front",
+      "sub": [
+        "long"
+      ],
+      "name": "brown",
+      "file": "hair_front/long/brown.png",
+      "bbox": [
+        75,
+        57,
+        336,
+        367
+      ],
+      "z_group": 3
+    },
+    {
+      "id": "hair_front.long.black",
+      "group": "hair_front",
+      "sub": [
+        "long"
+      ],
+      "name": "black",
+      "file": "hair_front/long/black.png",
+      "bbox": [
+        75,
+        57,
+        336,
+        367
+      ],
+      "z_group": 3
+    },
+    {
+      "id": "hair_front.short.blonde",
+      "group": "hair_front",
+      "sub": [
+        "short"
+      ],
+      "name": "blonde",
+      "file": "hair_front/short/blonde.png",
+      "bbox": [
+        75,
+        56,
+        336,
+        346
+      ],
+      "z_group": 3
+    },
+    {
+      "id": "hair_front.short.silver",
+      "group": "hair_front",
+      "sub": [
+        "short"
+      ],
+      "name": "silver",
+      "file": "hair_front/short/silver.png",
+      "bbox": [
+        75,
+        56,
+        336,
+        346
+      ],
+      "z_group": 3
+    },
+    {
+      "id": "hair_front.short.pink",
+      "group": "hair_front",
+      "sub": [
+        "short"
+      ],
+      "name": "pink",
+      "file": "hair_front/short/pink.png",
+      "bbox": [
+        75,
+        56,
+        336,
+        347
+      ],
+      "z_group": 3
+    },
+    {
+      "id": "hair_front.short.brown",
+      "group": "hair_front",
+      "sub": [
+        "short"
+      ],
+      "name": "brown",
+      "file": "hair_front/short/brown.png",
+      "bbox": [
+        75,
+        56,
+        336,
+        346
+      ],
+      "z_group": 3
+    },
+    {
+      "id": "hair_front.short.black",
+      "group": "hair_front",
+      "sub": [
+        "short"
+      ],
+      "name": "black",
+      "file": "hair_front/short/black.png",
+      "bbox": [
+        75,
+        56,
+        336,
+        346
+      ],
+      "z_group": 3
+    },
+    {
+      "id": "face.smile",
+      "group": "face",
+      "sub": [],
+      "name": "smile",
+      "file": "face/smile.png",
+      "bbox": [
+        124,
+        182,
+        288,
+        284
+      ],
+      "z_group": 4
+    },
+    {
+      "id": "face.shocked",
+      "group": "face",
+      "sub": [],
+      "name": "shocked",
+      "file": "face/shocked.png",
+      "bbox": [
+        121,
+        170,
+        292,
+        295
+      ],
+      "z_group": 4
+    },
+    {
+      "id": "face.normal",
+      "group": "face",
+      "sub": [],
+      "name": "normal",
+      "file": "face/normal.png",
+      "bbox": [
+        124,
+        182,
+        288,
+        285
+      ],
+      "z_group": 4
+    },
+    {
+      "id": "face.delighted",
+      "group": "face",
+      "sub": [],
+      "name": "delighted",
+      "file": "face/delighted.png",
+      "bbox": [
+        124,
+        182,
+        288,
+        296
+      ],
+      "z_group": 4
+    },
+    {
+      "id": "face.sad",
+      "group": "face",
+      "sub": [],
+      "name": "sad",
+      "file": "face/sad.png",
+      "bbox": [
+        121,
+        169,
+        293,
+        284
+      ],
+      "z_group": 4
+    },
+    {
+      "id": "face.angry",
+      "group": "face",
+      "sub": [],
+      "name": "angry",
+      "file": "face/angry.png",
+      "bbox": [
+        124,
+        165,
+        289,
+        296
+      ],
+      "z_group": 4
+    },
+    {
+      "id": "face.smug",
+      "group": "face",
+      "sub": [],
+      "name": "smug",
+      "file": "face/smug.png",
+      "bbox": [
+        121,
+        181,
+        291,
+        281
+      ],
+      "z_group": 4
+    },
+    {
+      "id": "face.annoyed",
+      "group": "face",
+      "sub": [],
+      "name": "annoyed",
+      "file": "face/annoyed.png",
+      "bbox": [
+        121,
+        181,
+        291,
+        287
+      ],
+      "z_group": 4
+    },
+    {
+      "id": "face.sleepy",
+      "group": "face",
+      "sub": [],
+      "name": "sleepy",
+      "file": "face/sleepy.png",
+      "bbox": [
+        118,
+        185,
+        295,
+        286
+      ],
+      "z_group": 4
+    },
+    {
+      "id": "face.smile2",
+      "group": "face",
+      "sub": [],
+      "name": "smile2",
+      "file": "face/smile2.png",
+      "bbox": [
+        124,
+        182,
+        288,
+        284
+      ],
+      "z_group": 4
+    },
+    {
+      "id": "face.laugh",
+      "group": "face",
+      "sub": [],
+      "name": "laugh",
+      "file": "face/laugh.png",
+      "bbox": [
+        124,
+        182,
+        288,
+        296
+      ],
+      "z_group": 4
+    },
+    {
+      "id": "accessories.red_glasses",
+      "group": "accessories",
+      "sub": [],
+      "name": "red glasses",
+      "file": "accessories/red_glasses.png",
+      "bbox": [
+        107,
+        212,
+        308,
+        271
+      ],
+      "z_group": 5
+    },
+    {
+      "id": "accessories.black_glasses",
+      "group": "accessories",
+      "sub": [],
+      "name": "black glasses",
+      "file": "accessories/black_glasses.png",
+      "bbox": [
+        107,
+        212,
+        308,
+        271
+      ],
+      "z_group": 5
+    },
+    {
+      "id": "accessories.circle_glasses",
+      "group": "accessories",
+      "sub": [],
+      "name": "circle glasses",
+      "file": "accessories/circle_glasses.png",
+      "bbox": [
+        108,
+        204,
+        304,
+        284
+      ],
+      "z_group": 5
+    },
+    {
+      "id": "accessories.flower",
+      "group": "accessories",
+      "sub": [],
+      "name": "flower",
+      "file": "accessories/flower.png",
+      "bbox": [
+        277,
+        190,
+        313,
+        229
+      ],
+      "z_group": 5
+    },
+    {
+      "id": "accessories.choker",
+      "group": "accessories",
+      "sub": [],
+      "name": "choker",
+      "file": "accessories/choker.png",
+      "bbox": [
+        184,
+        306,
+        222,
+        319
+      ],
+      "z_group": 5
+    }
+  ],
+  "default_config": {
+    "body": "body.skin2",
+    "blush": "body.blush.blush1",
+    "hairBack": "hair_back.long.brown",
+    "hairFront": "hair_front.long.brown",
+    "face": "face.smile",
+    "outfit": "outfit.seifuku2",
+    "accessories": [
+      "accessories.red_glasses"
+    ]
+  },
+  "placeholder_labels": [
+    "Placeholder art / poses",
+    "Male parts, body types and heights unavailable",
+    "Front view used in all directions",
+    "Separate eyes, mouth, shoes and clothing colors unavailable"
+  ],
+  "expression_sets": [
+    {
+      "face_ids": [
+        "face.smile",
+        "face.shocked",
+        "face.normal",
+        "face.delighted",
+        "face.sad",
+        "face.angry",
+        "face.smug",
+        "face.annoyed",
+        "face.sleepy",
+        "face.smile2",
+        "face.laugh"
+      ],
+      "poses": {
+        "love": "face.smile2",
+        "hug": "face.smile2",
+        "wave": "face.smile",
+        "laugh": "face.laugh",
+        "cry": "face.sad",
+        "angry": "face.angry",
+        "please": "face.sad",
+        "clap": "face.delighted",
+        "dance": "face.delighted",
+        "yawn": "face.sleepy",
+        "kiss": "face.smile2",
+        "sleep": "face.sleepy",
+        "cuddle": "face.smile2"
+      }
+    }
+  ],
+  "placeholder_notes": {
+    "body": "Placeholder: male parts, body types and height variants unavailable.",
+    "face": "Front view only. Twintails back and bob front use another style’s complementary layer. Eyes and mouth are combined in each face.",
+    "clothes": "Separate shirts, pants, shoes and colors unavailable.",
+    "review": "Placeholder art / poses: front-only movement and transformed activities until pose art is available."
+  }
+}

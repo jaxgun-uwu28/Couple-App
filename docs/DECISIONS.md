@@ -1,5 +1,25 @@
 # DECISIONS
 
+## 2026-10-03 — Approved asset plan and manifest authority
+
+Manual phone diagnostics selected by user. Add a tiny optional local Capacitor Android plugin, sampled only when opening Settings, using Android Debug.getMemoryInfo. Report app-process PSS in MiB; explicitly exclude isolated WebView renderer processes, and do not call it whole-app memory. Web reports JS heap when supported. No permissions, external telemetry, paid dependency or gameplay reliance. APIs checked against Capacitor custom-code documentation and Android Debug API reference.
+
+User approved the supplied-asset plan, including temporary front-only transforms/effects and explicit UI/code placeholder labels. DESIGN documents four-direction movement and temporary Sit/Sleep/Hug/Cuddle presentation before implementation. This supersedes the pending-approval status below; Phase 3 only.
+
+Store each look as seven manifest layer selections: body, optional blush, hairBack, hairFront, face, outfit and accessory IDs. Manifest layer groups/subgroups drive editor options, defaults, face/emote mappings and renderer composition. New male parts need only files and entries in the existing manifest roles; no gender-specific code or hard-coded option counts. A build script validates asset files and generates the additive SQL catalog migration from the same manifest; adding assets still requires rebuilding/deploying that generated catalog, not editing application/database function code. Database save validation rejects unknown IDs, incorrect roles, duplicates and extra fields. Existing numeric prototype looks remain stored but are returned as the manifest default with configured=false until explicitly resaved; do not silently rewrite user data.
+
+Keep bounded lower/upper base caches and a separate outfit; transform all aligned layers together without editing PNGs. Report measured FPS and memory for two visible characters, distinguish JS heap/cache estimates from whole-app memory, and identify device/test conditions. Native WebView heap APIs may be unavailable; show this honestly and use adb memory readings if an attached phone is available. Real Android results require the user's physical-device check; never substitute desktop touch emulation for a low-end phone measurement.
+
+## 2026-10-03 — Phase 3 supplied assets; integration awaiting approval
+
+User explicitly confirmed `assets/characters/chibi_v1/` as **licensed free images**. This overrides stale UNCONFIRMED notices in the manifest/README. These assets are **not final art**. Preserve PNGs unchanged: no editing, redrawing, trimming, recoloring or invented variants. Await approval of the asset integration plan before implementing. No Phase 4.
+
+Rendering choice: **cache body/hair/face together; keep clothing separate**. Preserve overlap with two bounded base caches: lower = hair_back + body + optional blush; upper = hair_front + face. Draw the separate outfit between them and accessories on top. Clothing changes reuse base caches. Use `half/` PNGs aligned at (0,0), all on the same 200x300 transparent canvas; uniformly scale the complete composition for the world.
+
+Editor choice: **Body → Face/Hair → Clothes → Review**, full-screen on mobile. Onboarding/Mirror open the shared editor at Body; Wardrobe starts at Clothes. Keep explicit save/cancel and five own-character outfit presets. Offer real catalog choices and label missing options. Pair twintails back and bob front with complementary layers from another style.
+
+Use face layers for emotes and a reusable chat portrait renderer without implementing Phase 4 chat. Missing male parts, customization options, directional views and poses remain explicitly marked placeholders. Earlier prototype work remains on the Phase 3 branch. The additive hosted character/social schema was applied before this instruction; Phase 3 has not been published to main/Vercel. Future catalog compatibility changes require approved implementation and matching protocol updates.
+
 ## 2026-10-03 — Phase 3 selected rendering and editor (before implementation)
 
 User explicitly chose **1C: cache body/hair/face; keep clothing separate**. Use a bounded per-character base atlas for body/skin/hair/face, with aligned independent shirt/pants/shoes/accessory sprite layers sharing four-direction animation frames. Preserve approved soft-chibi proportions and Rose & Sky, phone renderer caching and movement/network performance. Do not replace this with a fully flattened outfit atlas.

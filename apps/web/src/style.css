@@ -80,3 +80,6 @@ select { min-height: 44px; border-radius: 10px; border: 1px solid #796470; paddi
 .consent-prompt p {margin:0 0 8px;}
 .consent-prompt button {margin-inline:4px;}
 @media (pointer:coarse), (max-width:600px) {.character-backdrop {padding:0;}.character-editor {width:100%;height:100%;border-radius:0;padding:12px max(16px,env(safe-area-inset-right)) max(10px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left));}.character-editor-body {grid-template-columns:28% 1fr;gap:12px;margin-top:8px;}.character-preview canvas {height:min(224px,45vh);}.character-editor header {gap:10px;}.character-editor header h2 {font-size:20px;}.character-options label {grid-template-columns:90px 1fr;}.character-editor footer .actions {margin:0;}}
+.character-placeholder-badge { position:absolute; bottom:8px; left:50%; transform:translateX(-50%); z-index:3; margin:0; padding:3px 8px; border-radius:8px; background:#fff9fae8; color:#725e6b; font-size:11px; pointer-events:none; }
+.placeholder-note { font-size:12px; color:#725e6b; }
+.character-preview canvas { max-height:60vh; object-fit:contain; }

@@ -248,6 +248,18 @@ All directions support portrait and landscape, stop motion on background, and pr
 
 All actions validate range, membership and authoritative availability later. Show a friendly already-done response for simultaneous claims. Selecting a partner uses explicit Hug/Cuddle requests; proximity alone never silently starts an activity.
 
+## Phase 3 — approved front-only character placeholders (2026-10-03)
+
+Use the supplied chibi_v1 half PNGs unchanged, aligned at (0,0) on 200x300 canvases. Stack hair_back, body/blush, outfit, hair_front, face, accessories. Two cached base sections surround the separate outfit. Front-only art is provisional, with persistent "Placeholder art / poses" labeling in the game and editor; missing options are identified rather than fabricated. All temporary transform code is marked PLACEHOLDER.
+
+Four-direction movement uses the same front sprite in every direction: left flips the complete composite horizontally, right restores it; up/down keep the front view. A small procedural walk bounce and tilt communicate movement without changing feet/collision positions. Up is explicitly not a back-view illustration. Reduced motion removes bounce/tilt.
+
+Sit temporarily compresses the complete character vertically and slightly lowers the art at the authoritative seat anchor. Sleep rotates and uniformly scales the composite horizontally around the bed anchor, with a sleepy face and Zzz effect. Sofa Cuddle uses two seated transforms at their existing slots; bed Cuddle uses two sleeping transforms. Hug gently tilts each anchored character toward the partner, selects a warm supplied face and displays shared hearts only after consent. No arm/leg redraw, fabricated pose sprites or teleporting. Effects/expressions distinguish activities; these transforms do not count as completed pose art. Either player leaving/cancelling returns to the ordinary transform. Name tags/reactions remain upright and readable.
+
+Use supplied face layers for emotes and portrait composition. Exact missing gestures (wave/clap/dance/blown kiss etc.) use named placeholder transforms and reactions. The shared portrait composer is ready for future chat portraits; chat remains Phase 4.
+
+Editor: Body → Face/Hair → Clothes → Review; same screens full-screen on mobile. Mirror/onboarding starts Body, Wardrobe starts Clothes. Manifest IDs and labels provide all selectable art; complementary hair front/back choices are explicit. Five saved outfit slots retain outfit/accessory selections when worn.
+
 ## Mockup approval order
 
 First set: three low-fidelity concept previews, each containing **character + cat + dog + one sample living room + HUD/interaction/joystick**. They compare composition and proportions, not final sprites, animations or tested gameplay. These exploratory bundles do not auto-select any choice.

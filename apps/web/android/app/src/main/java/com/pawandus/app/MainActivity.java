@@ -6,6 +6,12 @@ import androidx.core.view.WindowInsetsControllerCompat;
 
 public class MainActivity extends BridgeActivity {
     @Override
+    public void onCreate(android.os.Bundle savedInstanceState) {
+        registerPlugin(PerformanceMemoryPlugin.class);
+        super.onCreate(savedInstanceState);
+    }
+
+    @Override
     public void onResume() {
         super.onResume();
         WindowInsetsControllerCompat bars = new WindowInsetsControllerCompat(getWindow(), getWindow().getDecorView());

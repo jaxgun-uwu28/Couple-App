@@ -5,6 +5,7 @@ on:
     paths:
       - apps/web/**
       - packages/shared/**
+      - assets/characters/**
       - pnpm-lock.yaml
       - .github/workflows/debug-apk.yml
   workflow_dispatch:

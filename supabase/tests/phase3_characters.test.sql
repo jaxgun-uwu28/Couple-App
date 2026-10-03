@@ -19,13 +19,13 @@ select throws_ok($$insert into public.character_outfits values(auth.uid(),0,'{}'
 select throws_ok($$delete from public.character_social$$,'42501',null,'Direct consent writes denied');
 select throws_ok($$select public._valid_appearance('{}')$$,'42501',null,'Private helper cannot be invoked by client');
 select is(public.save_character('{}',null,gen_random_uuid())->>'code','INVALID_APPEARANCE','Missing catalog selections refused');
-select is(public.save_character((select value||'{"skin":8}' from character_results where label='look'),null,gen_random_uuid())->>'code','INVALID_APPEARANCE','Out of catalog skin refused');
-select is(public.save_character((select value||'{"height":1.5}' from character_results where label='look'),null,gen_random_uuid())->>'code','INVALID_APPEARANCE','Fractional catalog selections refused');
+select is(public.save_character((select value||'{"body":"body.invalid"}' from character_results where label='look'),null,gen_random_uuid())->>'code','INVALID_APPEARANCE','Unknown manifest ID refused');
+select is(public.save_character((select value||'{"face":1.5}' from character_results where label='look'),null,gen_random_uuid())->>'code','INVALID_APPEARANCE','Numeric layer selection refused');
 select is(public.save_character((select value from character_results where label='look'),5,gen_random_uuid())->>'code','INVALID_APPEARANCE','Sixth preset refused');
 insert into character_results values('saved',public.save_character((select value from character_results where label='look'),null,'32000000-0000-4000-8000-000000000001'));
 select is((select value->>'ok' from character_results where label='saved'),'true','Own appearance saves');
 select is(public.save_character((select value from character_results where label='look'),null,'32000000-0000-4000-8000-000000000001'),(select value from character_results where label='saved'),'Duplicate save replays');
-select is(public.save_character((select value||'{"skin":2}' from character_results where label='look'),null,'32000000-0000-4000-8000-000000000001')->>'code','REQUEST_CONFLICT','Duplicate key cannot change appearance');
+select is(public.save_character((select value||'{"body":"body.skin3"}' from character_results where label='look'),null,'32000000-0000-4000-8000-000000000001')->>'code','REQUEST_CONFLICT','Duplicate key cannot change appearance');
 select is(public.get_house_characters()->'profiles'->0->>'configured','true','Appearance read is authoritative');
 select public.save_character((select value from character_results where label='look'),s,gen_random_uuid()) from generate_series(0,4) s;
 select is(jsonb_array_length(public.get_house_characters()->'presets'),5,'Five owned outfits persist');
