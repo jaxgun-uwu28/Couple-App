@@ -1,5 +1,7 @@
 # Phase 2 new-login position sync — 2026-10-03
 
+Published app source `58071b7` to main/Vercel; production root serves matching `index-DTPf7Xza.js`. CI `37093850016` web/database jobs succeeded; matching APK run `37093850080` succeeded. Verified `artifacts/phase2/Paw-and-Us-0.2.3-58071b7.apk`, SHA-256 `93639707de43621a5407d118739c582e6e6827c80173218cead9fdc6d8135e7f`; archive digest, Android signature and package/version/SDK metadata checked. Phone login recheck remains pending.
+
 ## Implemented
 
 User confirmed phone 0.2.2 smoothness after one minute of walking, roughly 55–77+ FPS. Preserve that renderer. A fresh login still spawns in the hall, but its partner now establishes the new session's received position immediately instead of interpolating from the previous living-room position. Remote playback/display history resets only for a new session; normal movement and same-session recovery retain smoothing.
@@ -22,7 +24,7 @@ Existing motion events unchanged. Couple membership and current Presence session
 
 ## Tests
 
-47 unit tests pass, including immediate new-session position/direction and bounded same-session recovery. Phone browser regression logs out in Living Room, signs back in at Hall, and checks partner position matches within 1.5s despite 150ms fixture delivery delay. Existing movement/idle/collision, device ownership/logout and simultaneous reconnect/Away tests cover related regressions. Final build/CI evidence recorded after completion.
+47 unit tests, strict build/types and four focused local browser regressions passed. Final CI passed all 15 browser tests plus 99 pgTAP assertions and concurrent transaction checks. Phone browser regression logs out in Living Room, signs back in at Hall, and checks partner position matches within 1.5s despite 150ms fixture delivery delay. Existing movement/idle/collision, device ownership/logout and simultaneous reconnect/Away tests cover related regressions.
 
 ## Known Issues
 
@@ -30,4 +32,4 @@ Physical phone logout/login recheck remains pending. Matching web/APK required; 
 
 ## Next Phase
 
-Publish the verified login correction and APK, then wait for device verification. Phase 2 remains open; Phase 3 is unstarted.
+Web correction published and matching APK verified. Refresh partner web client, install 0.2.3, and recheck Living Room logout → Hall login from both views. Wait for device verification. Phase 2 remains open; Phase 3 is unstarted.
