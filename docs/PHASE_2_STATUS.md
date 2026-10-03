@@ -2,7 +2,7 @@
 
 Device feedback update 2026-10-03: user confirmed phone smoothness on 0.2.2 (roughly 55–77+ observed FPS), and confirmed the 0.2.3 logout/login partner-position issue resolved. These reported issues are verified by user recheck. See PHASE_2_PHONE_PERFORMANCE.md and PHASE_2_LOGIN_SYNC.md. Overall phase approval remains separate; Phase 3 is unstarted.
 
-Status 2026-10-03: **published to main and Vercel; automated checks passed; real web/Android exploration pending**. User approved Phase 2, spacing A and explicitly approved production publication. Main was fast-forwarded to the verified Phase 2 branch. Do not tag complete or begin Phase 3 until the two-device check and user approval.
+Status 2026-10-03: **complete and accepted for progression**. User tested the shared house on web/phone, confirmed phone smoothness and login-sync resolution, then authorized proceeding. Final source/build evidence is in PHASE_2_LOGIN_SYNC.md and PHASE_2_PHONE_PERFORMANCE.md. Phase 3 is authorized for planning/design; implementation waits for its design gate.
 
 ## Implemented
 
@@ -54,4 +54,4 @@ Real web-to-phone full-house exploration is **not yet verified**. Android debug 
 
 ## Next Phase
 
-Finish current-phase real-device verification and obtain approval. Phase 3 Character System stays unstarted.
+Phase 3 Character System: confirm outfit layering and creator layout before implementation; see PHASE_3_PLAN.md.
