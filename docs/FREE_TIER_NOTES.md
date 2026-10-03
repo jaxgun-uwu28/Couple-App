@@ -2,6 +2,8 @@
 
 Date checked: **2026-10-02 (Asia/Manila)**. Official pricing and documentation only. Published limits, not measured usage; no cloud projects created. Recheck before deploying.
 
+Phase 3 recheck **2026-10-03**: [Supabase pricing](https://supabase.com/pricing) and [Vercel Hobby](https://vercel.com/docs/plans/hobby) still support the existing free deployment. Phase 3 adds no service or subscription. Character assets are generated locally and bundled; no image-hosting usage. Appearance/consent invalidations use the existing private channel; idle characters send no recurring traffic. During an accepted pair, two players each renew once per 30 seconds and broadcast one invalidation: about 8 accounted messages/minute, or 28,800/month at two hours/day for 30 days, excluding existing seat renewal, Presence and user-triggered reactions. This is an estimate, not measured project usage; active paired actions stop normal movement traffic. Expiry rereads once and does not poll an empty state.
+
 ## Supabase Free
 
 | Resource | Published allowance / restriction |

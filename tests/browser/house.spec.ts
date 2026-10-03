@@ -129,7 +129,7 @@ test('balanced house: desktop/mobile explore, shared slots, furniture actions an
  await expect(a.getByRole('button',{name:'Leave',exact:true})).toBeVisible();await expect(b.getByRole('button',{name:'Leave',exact:true})).toBeVisible();
  await a.getByRole('button',{name:'Cuddle',exact:true}).click();await b.getByRole('button',{name:'Accept',exact:true}).click();await expect(a.getByTestId('world')).toHaveAttribute('data-social','active');await expect(b.getByTestId('world')).toHaveAttribute('data-social','active');
  await a.getByRole('button',{name:'Settings',exact:true}).click();await a.getByRole('button',{name:'Reconnect',exact:true}).click();await expect(a.getByText('Connected',{exact:true})).toBeVisible();await expect(a.getByRole('button',{name:'Leave',exact:true})).toBeVisible();
- await expect(a.getByTestId('world')).toHaveAttribute('data-social','active');
+ await expect(a.getByTestId('world')).toHaveAttribute('data-social','none');
  await mkdir('artifacts/phase2',{recursive:true});await a.screenshot({path:'artifacts/phase2/balanced-house-desktop.png'});await b.screenshot({path:'artifacts/phase2/balanced-house-mobile.png'});
  await a.keyboard.press('Escape');await b.getByRole('button',{name:'Leave',exact:true}).click();await expect(a.getByRole('button',{name:'Sit',exact:true})).toBeVisible();
  await walkTo(a,144,256);await expect(a.getByTestId('world')).toHaveAttribute('data-room','kitchen');await a.getByRole('button',{name:'Open',exact:true}).click();

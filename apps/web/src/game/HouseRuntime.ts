@@ -121,7 +121,7 @@ export class HouseRuntime {
         if(this.disposed||generation!==this.generation)return;
         if(!next||next.couple_id!==this.snapshotValue.couple_id){this.onSnapshot(next);return;}
         this.snapshotValue=next;this.prepareRemotes();this.onSnapshot(next);
-        if(this.cottage){await this.refreshWorld();await this.refreshCharacters();}
+        if(this.cottage){await this.refreshWorld(true);await this.refreshCharacters(true);}
         // Stamp a new device session once from a fresh RPC, never from cache.
         if(!this.timestampVerified){this.joinedAt=new Date(next.server_time).toISOString();this.timestampVerified=true;this.takeover=false;}
         await this.transport.track(this.currentPresence());
@@ -239,25 +239,25 @@ export class HouseRuntime {
   private async send(message:HouseMessage){if(this.disposed)return;await this.transport.send(message);this.sent++;}
   private sendMotion(event:MotionEvent){return this.send({event,payload:this.packet()});}
   private stopMotion(){this.local={...this.local,vx:0,vy:0,animation:'idle'};}
-  private async refreshWorld():Promise<void>{
-    if(this.worldRead)return this.worldRead;
+  private async refreshWorld(fresh=false):Promise<void>{
+    while(this.worldRead){await this.worldRead;if(!fresh)return;}
     this.worldRead=(async()=>{if(!this.api.world)throw new Error('House object API unavailable.');const state=await this.api.world(this.snapshotValue.couple_id);if(this.disposed)return;this.worldOffset=Date.parse(state.server_time)-Date.now();this.worldValue=state;this.notify();})().finally(()=>{this.worldRead=null;});
     return this.worldRead;
   }
   private ownSlot(){return this.view().world?.slots.find(s=>s.user_id===this.local.user_id&&s.session_id===this.local.session_id);}
-  private async refreshCharacters(){
-    if(!this.api.characters)return;if(this.characterRead)return this.characterRead;
+  private async refreshCharacters(fresh=false){
+    if(!this.api.characters)return;while(this.characterRead){await this.characterRead;if(!fresh)return;}
     this.characterRead=(async()=>{const state=await this.api.characters!(this.local.couple_id);if(this.disposed)return;this.charactersValue=state;this.characterOffset=Date.parse(state.server_time)-Date.now();this.notify();})().finally(()=>{this.characterRead=null;});return this.characterRead;
   }
   private async characterChanged(){if(this.api.characters&&this.connection==='connected'&&!this.disposed)await this.send({event:'character_changed',payload:{couple_id:this.local.couple_id,user_id:this.local.user_id,session_id:this.local.session_id,request_id:crypto.randomUUID()}});}
-  async saveAppearance(appearance:Appearance,preset:number|null=null){if(!this.ready||this.takeover||!this.api.saveCharacter)throw new Error('Reconnect before changing your character.');await this.api.saveCharacter(appearance,preset);await this.refreshCharacters();await this.characterChanged();}
+  async saveAppearance(appearance:Appearance,preset:number|null=null){if(!this.ready||this.takeover||!this.api.saveCharacter)throw new Error('Reconnect before changing your character.');await this.api.saveCharacter(appearance,preset);await this.refreshCharacters(true);await this.characterChanged();}
   private noteInput(now:number){this.lastInput=now;if(this.afk){this.afk=false;void this.transport.track(this.currentPresence()).catch(()=>undefined);}}
   touchInput(){this.noteInput(performance.now());}
   async emote(emote:Emote){if(!this.ready||!this.active||this.takeover)return;const now=performance.now();if(now-(this.lastEmote.get(this.local.user_id)??-Infinity)<1000)return;this.noteInput(now);this.lastEmote.set(this.local.user_id,now);this.reactions={...this.reactions,[this.local.user_id]:{emote,at:now,until:now+3000}};await this.send({event:'emote',payload:{couple_id:this.local.couple_id,user_id:this.local.user_id,session_id:this.local.session_id,request_id:crypto.randomUUID(),emote}});this.notify();}
   async social(action:'request'|'accept'|'ignore'|'cancel',kind:'hug'|'cuddle'|null=null){
     if(this.socialRenew)await this.socialRenew;if(!this.api.social||this.takeover||this.connection!=='connected'||((action==='request'||action==='accept')&&(!this.ready||!this.active)))throw new Error('Reconnect to play together.');if(this.socialBusy)return;
     this.socialBusy=true;this.stopMotion();this.lastInput=performance.now();this.notify();
-    try{await this.refreshCharacters();const row=this.view().characters?.social;if(action!=='request'&&!row)return;await this.api.social(action,kind,row?.id??null,this.local.session_id,this.local);await this.refreshCharacters();this.lastSocialRenew=performance.now();await this.characterChanged();}finally{this.socialBusy=false;this.notify();}
+    try{await this.refreshCharacters(true);const row=this.view().characters?.social;if(action!=='request'&&!row)return;await this.api.social(action,kind,row?.id??null,this.local.session_id,this.local);await this.refreshCharacters(true);this.lastSocialRenew=performance.now();await this.characterChanged();}finally{this.socialBusy=false;this.notify();}
   }
   private async cancelSocial(){const row=this.view().characters?.social;if(!row)return;await this.social(row.status==='pending'&&row.recipient_id===this.local.user_id?'ignore':'cancel');}
   async interact(target:CottageInteraction){
@@ -304,7 +304,7 @@ export class HouseRuntime {
         const peer=this.sessions.get(social.sender_id===this.local.user_id?social.recipient_id:social.sender_id);
         const peerSession=social.sender_id===this.local.user_id?social.recipient_session:social.sender_session;
         if(!peer||peer.status!=='online'||(peerSession&&peer.session_id!==peerSession)||Math.hypot(input.x,input.y)>.15){if(!this.socialBusy)void this.cancelSocial().catch(()=>undefined);}
-        else if(social.status==='active'&&now-this.lastSocialRenew>=30000&&!this.socialRenew&&this.api.social){this.lastSocialRenew=now;this.socialRenew=this.api.social('renew',null,social.id,this.local.session_id,this.local).catch(()=>undefined).then(()=>this.refreshCharacters()).then(()=>this.characterChanged()).finally(()=>{this.socialRenew=null;});}
+        else if(social.status==='active'&&now-this.lastSocialRenew>=30000&&!this.socialRenew&&this.api.social){this.lastSocialRenew=now;this.socialRenew=this.api.social('renew',null,social.id,this.local.session_id,this.local).catch(()=>undefined).then(()=>this.refreshCharacters(true)).then(()=>this.characterChanged()).catch(()=>{this.feedback='Your activity could not sync. Reconnect.';this.notify();}).finally(()=>{this.socialRenew=null;});}
         if(social.status==='active'||social.sender_id===this.local.user_id)input={x:0,y:0};
       }
       const activity=this.ownSlot();

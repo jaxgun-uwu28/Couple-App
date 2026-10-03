@@ -141,7 +141,7 @@ export default function World({ client, api, snapshot, onSnapshot, onBack, onLog
           }
         }
       }
-      game = new Phaser.Game({ type: Phaser.AUTO, ...(native?{render:{powerPreference:'high-performance' as const}}:{}), parent: host.current, backgroundColor: '#f8f0f2', width: host.current.clientWidth, height: host.current.clientHeight, scale: { mode: Phaser.Scale.RESIZE }, scene: HouseScene, audio: { noAudio: true }, input: { keyboard: { capture: [] }, touch: { capture: false } } });
+      game = new Phaser.Game({ type: Phaser.AUTO, ...(native?{render:{powerPreference:'high-performance' as const}}:{}), parent: host.current, backgroundColor: '#f8f0f2', width: host.current.clientWidth, height: host.current.clientHeight, scale: { mode: Phaser.Scale.RESIZE }, scene: HouseScene, audio: { noAudio: true }, input: { windowEvents:false, keyboard: { capture: [] }, touch: { capture: false } } });
     }).catch(() => { if (!cancelled) setHint('The room could not load. Go back and try again.'); });
     return () => { cancelled = true; input.current = { x: 0, y: 0 }; stopView(); game?.destroy(true); runtime.current = null; void controller.dispose(); };
   }, [client, api]);

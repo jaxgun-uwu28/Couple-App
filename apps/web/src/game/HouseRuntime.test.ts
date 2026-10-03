@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
-import { cottageInteractions } from '@paw/shared';
+import { cottageInteractions, defaultAppearance } from '@paw/shared';
 import type { HouseSnapshot, HousePresence, ConnectionState, WorldState } from '@paw/shared';
 import type { HouseMessage, HouseRealtimeTransport } from '../infra/HouseTransport';
 import { HouseRuntime } from './HouseRuntime';
@@ -8,7 +8,7 @@ const ids=['11111111-1111-4111-8111-111111111111','22222222-2222-4222-8222-22222
 const couple='33333333-3333-4333-8333-333333333333';
 const sofa=cottageInteractions.find(o=>o.id==='sofa')!;
 const flush=async()=>{await vi.advanceTimersByTimeAsync(600);};
-function pair(){
+function pair(character=false){
  let slots:WorldState['slots']=[];
  let dropHints=false,failRenew=false;
  let holdRenew:(()=>void)|undefined;
@@ -16,23 +16,24 @@ function pair(){
  const messages:((m:HouseMessage)=>void)[]=[];
  const presenceListeners:((p:HousePresence[])=>void)[]=[];
  const world=vi.fn(async()=>({couple_id:couple,server_time:new Date().toISOString(),states:[],slots:structuredClone(slots.filter(s=>Date.parse(s.expires_at)>Date.now()))}));
+ const characters=vi.fn(async()=>({couple_id:couple,server_time:new Date().toISOString(),profiles:ids.map((user_id,i)=>({user_id,configured:true,appearance:defaultAppearance(i+1)})),presets:[],social:null}));const sent:HouseMessage[]=[];
  const runtimes=ids.map((id,index)=>{
   let state:(s:ConnectionState)=>void=()=>undefined;
   const transport:HouseRealtimeTransport={
    connect:async()=>undefined,join:async()=>{state('connected');},disconnect:async()=>undefined,
    track:async p=>{presences[index]=p;presenceListeners.forEach(fn=>fn(presences));},presence:()=>presences,
    onState:fn=>{state=fn;return()=>undefined;},onMessage:fn=>{messages[index]=fn;return()=>undefined;},onPresence:fn=>{presenceListeners[index]=fn;return()=>undefined;},
-   send:async m=>{if(dropHints&&m.event==='object_changed')return;messages.forEach((fn,i)=>{if(i!==index)fn(m);});},
+   send:async m=>{sent.push(m);if(dropHints&&m.event==='object_changed')return;messages.forEach((fn,i)=>{if(i!==index)fn(m);});},
   };
   const snapshot={kind:'full',version:2,user_id:id,couple_id:couple,status:'active',members:ids.map((user_id,i)=>({user_id,seat:i+1,role:i===0?'partner_a':'partner_b',display_name:'Partner',joined_at:new Date().toISOString()})),house:{id:'44444444-4444-4444-8444-444444444444',map_id:'cottage-v1',layout_version:2},invite:null,server_time:new Date().toISOString()} as HouseSnapshot;
-  const api={snapshot:async()=>({...snapshot,server_time:new Date().toISOString()}),world,interact:async(action:string,object:string|null,slot:string|null,session:string)=>{
+  const api={snapshot:async()=>({...snapshot,server_time:new Date().toISOString()}),world,...(character?{characters}:{}),interact:async(action:string,object:string|null,slot:string|null,session:string)=>{
    if(action==='start')slots.push({object_id:object!,slot_id:slot!,user_id:id,session_id:session,expires_at:new Date(Date.now()+90000).toISOString()});
    if(action==='renew'){if(holdRenew)await new Promise<void>(resolve=>{holdRenew=resolve;});if(failRenew){slots=[];throw new Error('NOT_OWNER');}slots.forEach(s=>{if(s.user_id===id)s.expires_at=new Date(Date.now()+90000).toISOString();});}
    if(action==='cancel')slots=slots.filter(s=>s.user_id!==id||s.session_id!==session);
   }};
   return new HouseRuntime(transport,api,snapshot,()=>undefined);
  });
- return{runtimes,world,drop:()=>{dropHints=true;},fail:()=>{failRenew=true;},hold:()=>{holdRenew=()=>undefined;},release:()=>holdRenew?.()};
+ return{runtimes,world,characters,sent,presences,deliver:(m:HouseMessage)=>messages[1]!(m),drop:()=>{dropHints=true;},fail:()=>{failRenew=true;},hold:()=>{holdRenew=()=>undefined;},release:()=>holdRenew?.()};
 }
 beforeEach(()=>{vi.useFakeTimers();vi.setSystemTime(new Date('2026-10-03T00:00:00Z'));vi.stubGlobal('document',{hidden:false});});
 afterEach(()=>{vi.useRealTimers();vi.unstubAllGlobals();});
@@ -53,4 +54,15 @@ it('reconciles a rejected renewal instead of retaining a local phantom seat',asy
 });
 it('serializes Leave after an in-flight renewal',async()=>{
  const p=pair(),a=p.runtimes[0]!;await a.start();await a.interact(sofa);p.hold();vi.setSystemTime(Date.now()+30000);a.tick({x:0,y:0},.016,31000);const leave=a.cancelInteraction();p.release();await leave;expect(a.view().world?.slots).toHaveLength(0);
+});
+it('synchronizes bounded reactions, rejects stale sessions and expires them without idle polling',async()=>{
+ const p=pair(true),[a,b]=p.runtimes;await a!.start();await b!.start();await flush();await a!.emote('love');expect(b!.view().reactions[ids[0]!]?.emote).toBe('love');
+ p.deliver({event:'emote',payload:{couple_id:couple,user_id:ids[0]!,session_id:crypto.randomUUID(),request_id:crypto.randomUUID(),emote:'cry'}});expect(b!.view().reactions[ids[0]!]?.emote).toBe('love');
+ await vi.advanceTimersByTimeAsync(3100);b!.tick({x:0,y:0},.016,performance.now());expect(b!.view().reactions[ids[0]!]).toBeUndefined();
+ const reads=p.characters.mock.calls.length;for(let i=0;i<100;i++)b!.tick({x:0,y:0},.016,performance.now()+i*16);await flush();expect(p.characters.mock.calls.length).toBe(reads);
+});
+it('announces AFK once after two minutes, keeps the idle budget quiet and clears it on input',async()=>{
+ const p=pair(true),a=p.runtimes[0]!;await a.start();await p.runtimes[1]!.start();await flush();await vi.advanceTimersByTimeAsync(120000);a.tick({x:0,y:0},.016,performance.now());await flush();expect(a.view().actors.find(actor=>actor.local)?.afk).toBe(true);expect(p.presences[0]?.afk).toBe(true);
+ const reactions=p.sent.filter(m=>m.event==='emote').length;await vi.advanceTimersByTimeAsync(60000);a.tick({x:0,y:0},.016,performance.now());expect(p.sent.filter(m=>m.event==='emote')).toHaveLength(reactions);
+ a.touchInput();await flush();expect(a.view().actors.find(actor=>actor.local)?.afk).toBe(false);expect(p.presences[0]?.afk).toBe(false);
 });
