@@ -1,5 +1,7 @@
 # Phase 2 — Shared House World
 
+Device feedback update 2026-10-03: user confirmed phone smoothness on 0.2.2 (roughly 55–77+ observed FPS), and confirmed the 0.2.3 logout/login partner-position issue resolved. These reported issues are verified by user recheck. See PHASE_2_PHONE_PERFORMANCE.md and PHASE_2_LOGIN_SYNC.md. Overall phase approval remains separate; Phase 3 is unstarted.
+
 Status 2026-10-03: **published to main and Vercel; automated checks passed; real web/Android exploration pending**. User approved Phase 2, spacing A and explicitly approved production publication. Main was fast-forwarded to the verified Phase 2 branch. Do not tag complete or begin Phase 3 until the two-device check and user approval.
 
 ## Implemented

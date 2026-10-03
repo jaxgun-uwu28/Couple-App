@@ -30,8 +30,8 @@ None. Previous movement budget and lease fixes remain.
 
 ## Known Issues
 
-User rechecked 0.2.2 on the Infinix and reports good smoothness after about a minute of walking, with observed FPS roughly 55–77+. Phone smoothness gate passed by user report. A separate new-login partner-position interpolation bug is being corrected; do not mark Phase 2 complete until that recheck. Retain debug-install certificate handling; server account data remains intact.
+User rechecked 0.2.2 on the Infinix and reports good smoothness after about a minute of walking, with observed FPS roughly 55–77+. Phone smoothness gate passed by user report. The separate new-login partner-position issue was corrected in 0.2.3 and the user confirmed resolution; see PHASE_2_LOGIN_SYNC.md. Retain debug-install certificate handling; server account data remains intact.
 
 ## Next Phase
 
-Deliver verified APK 0.2.2 and phone-browser update, obtain walking FPS and smoothness feedback. Phase 2 remains open and Phase 3 stays unstarted.
+Phone update delivered and smoothness feedback confirmed. Wait for overall Phase 2 approval; Phase 3 stays unstarted.

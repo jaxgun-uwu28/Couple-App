@@ -28,8 +28,8 @@ Existing motion events unchanged. Couple membership and current Presence session
 
 ## Known Issues
 
-Physical phone logout/login recheck remains pending. Matching web/APK required; existing fresh CI debug signing can require uninstalling old debug app. Server account/home data is preserved.
+User confirmed on 2026-10-03 that the reported logout/login partner-position problem is resolved after the 0.2.3 handoff. Physical recheck passed by user report. Existing fresh CI debug signing can require uninstalling old debug app for future updates; server account/home data is preserved.
 
 ## Next Phase
 
-Web correction published and matching APK verified. Refresh partner web client, install 0.2.3, and recheck Living Room logout → Hall login from both views. Wait for device verification. Phase 2 remains open; Phase 3 is unstarted.
+Web correction published, matching APK verified and physical login recheck confirmed. Wait for overall Phase 2 approval; Phase 3 is unstarted.
