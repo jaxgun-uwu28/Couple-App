@@ -1,6 +1,6 @@
 # Phase 2 — Shared House World
 
-Device feedback update 2026-10-03: user confirmed phone smoothness on 0.2.2 (roughly 55–77+ observed FPS), and confirmed the 0.2.3 logout/login partner-position issue resolved. These reported issues are verified by user recheck. See PHASE_2_PHONE_PERFORMANCE.md and PHASE_2_LOGIN_SYNC.md. Overall phase approval remains separate; Phase 3 is unstarted.
+Device feedback update 2026-10-03: user confirmed phone smoothness on 0.2.2 (roughly 55–77+ observed FPS), and confirmed the 0.2.3 logout/login partner-position issue resolved. These reported issues are verified by user recheck. See PHASE_2_PHONE_PERFORMANCE.md and PHASE_2_LOGIN_SYNC.md. User subsequently approved progression; Phase 3 planning/design is authorized.
 
 Status 2026-10-03: **complete and accepted for progression**. User tested the shared house on web/phone, confirmed phone smoothness and login-sync resolution, then authorized proceeding. Final source/build evidence is in PHASE_2_LOGIN_SYNC.md and PHASE_2_PHONE_PERFORMANCE.md. Phase 3 is authorized for planning/design; implementation waits for its design gate.
 
@@ -50,7 +50,7 @@ APK: `artifacts/phase2/Paw-and-Us-phase2-2e0dc12.apk`, SHA-256 `5e59461b0b787157
 
 Automatic approval review initially required specific production publication approval. The user then explicitly approved publishing Phase 2 to main and Vercel; the fast-forward/push succeeded and the live connection was verified. Both web and phone need the matching Phase 2 client to share its map-version channel.
 
-Real web-to-phone full-house exploration is **not yet verified**. Android debug signing certificates differ from the previous build, so Android may require uninstalling the old debug app before installing this APK; sign in again afterwards. Server account/home data remains in Supabase. Final modular character art/animations, game selection/content, cooking/cleaning systems, chat and new day/night simulation remain deferred to their own approved work. Current poses are framework placeholders.
+User tested the full-house web/phone clients and accepted progression after resolving reported issues. Latest retained APK is 0.2.3; earlier APK references above are historical build evidence and obsolete local APK files were deleted at the user's request. Debug signing certificates differ between CI builds, requiring uninstall/reinstall for updates; server account/home data remains in Supabase. Final modular character art/animations belong to Phase 3. Game content, cooking/cleaning systems, chat and new day/night simulation remain deferred. Current poses are framework placeholders.
 
 ## Next Phase
 
